@@ -136,12 +136,12 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   align-items: baseline;
   color: #fff;
   background: var(--brand);
-  padding: .34em .58em .4em;
-  border-radius: .68em;
+  padding: .3em .56em .36em;
+  border-radius: .68em .68em .68em .2em;
   position: relative;
   line-height: 1;
 }
-.wordmark b { color: var(--brand-soft); font-weight: 800; }
+.wordmark b { color: rgba(255, 255, 255, .9); font-weight: 700; margin-left: .3em; }
 .wordmark .dot { display: none; }
 .wordmark::after { /* speech-bubble tail */
   content: "";

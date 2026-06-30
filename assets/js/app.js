@@ -95,7 +95,13 @@
     return `<span class="lp-avstack">${names.map((n, i) =>
       `<span class="lp-av" style="width:${size}px;height:${size}px;background:${cols[i % cols.length]}">${esc((n[0] || "·").toUpperCase())}</span>`).join("")}</span>`;
   }
-  const lpLogo = `<a href="#/" style="font-family:var(--lp-display);font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--brand-ink-strong);text-decoration:none">RSVP<b style="color:var(--brand-primary)">please</b></a>`;
+  const lpLogo = `<a href="#/" aria-label="RSVP please" style="display:inline-flex;align-items:center;text-decoration:none">
+    <span style="position:relative;display:inline-flex;align-items:baseline;background:var(--brand-primary);color:#fff;
+      border-radius:.7em .7em .7em .18em;padding:.16em .5em .2em;font-family:var(--lp-display);font-weight:700;font-size:23px;letter-spacing:-.02em;line-height:1">
+      <span style="font-weight:800;letter-spacing:.01em">RSVP</span>
+      <span style="font-weight:600;opacity:.9;margin-left:.36em">please</span>
+      <span style="position:absolute;left:.55em;bottom:-.26em"><svg width=".36em" height=".36em" viewBox="0 0 20 20" style="display:block;overflow:visible" aria-hidden="true"><path d="M2 2 L18 2 L2 18 Z" fill="var(--brand-primary)"/></svg></span>
+    </span></a>`;
 
   function lpHeroArt() {
     return `
