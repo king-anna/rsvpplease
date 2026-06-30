@@ -159,6 +159,20 @@
       </div>`;
     app.querySelectorAll("[data-start],[data-signin]").forEach((b) =>
       b.addEventListener("click", () => go("#/signin")));
+
+    // Reveal sections as they scroll into view.
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add("in-view"); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.15, rootMargin: "0px 0px -8% 0px" });
+      app.querySelectorAll(".lp-section .lp-head, .lp-step, .lp-feature, .lp-price-card")
+        .forEach((n) => io.observe(n));
+    } else {
+      app.querySelectorAll(".lp-section .lp-head, .lp-step, .lp-feature, .lp-price-card")
+        .forEach((n) => n.classList.add("in-view"));
+    }
   }
 
   function showCheckEmail(email) {

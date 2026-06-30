@@ -518,6 +518,55 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   .lp-features { grid-template-columns: 1fr; }
 }
 
+/* ---- Landing animations ----------------------------------------------- */
+/* Hero: staggered rise on load */
+.lp-hero .eyebrow, .lp-title, .lp-sub, .lp-cta-row, .lp-trust, .lp-hero-art {
+  opacity: 0; animation: lp-rise .75s cubic-bezier(.2, .7, .2, 1) both;
+}
+.lp-hero .eyebrow { animation-delay: .05s; }
+.lp-title       { animation-delay: .14s; }
+.lp-sub         { animation-delay: .28s; }
+.lp-cta-row     { animation-delay: .40s; }
+.lp-trust       { animation-delay: .50s; }
+.lp-hero-art    { animation-delay: .58s; }
+@keyframes lp-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+/* Phone gently floats once it's in */
+.lp-hero-art .phone { animation: lp-float 5.5s ease-in-out 1.4s infinite; }
+@keyframes lp-float {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50%      { transform: rotate(-3deg) translateY(-12px); }
+}
+
+/* Chat bubbles pop in sequence (child 1 is .bar) */
+.lp-hero-art .screen .bubble { opacity: 0; animation: lp-pop .45s cubic-bezier(.2, .8, .2, 1) both; }
+.lp-hero-art .screen .bubble:nth-child(2) { animation-delay: 1.05s; }
+.lp-hero-art .screen .bubble:nth-child(3) { animation-delay: 1.55s; }
+.lp-hero-art .screen .bubble:nth-child(4) { animation-delay: 2.05s; }
+@keyframes lp-pop { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* Scroll-revealed sections (toggled by IntersectionObserver -> .in-view) */
+.lp-section .lp-head, .lp-step, .lp-feature, .lp-price-card {
+  opacity: 0; transform: translateY(22px);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1);
+}
+.in-view { opacity: 1 !important; transform: none !important; }
+.lp-steps .lp-step:nth-child(2) { transition-delay: .1s; }
+.lp-steps .lp-step:nth-child(3) { transition-delay: .2s; }
+.lp-features .lp-feature:nth-child(2) { transition-delay: .08s; }
+.lp-features .lp-feature:nth-child(3) { transition-delay: .16s; }
+.lp-features .lp-feature:nth-child(4) { transition-delay: .24s; }
+.lp-step:hover, .lp-feature:hover { transform: translateY(-4px); transition-duration: .2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero .eyebrow, .lp-title, .lp-sub, .lp-cta-row, .lp-trust, .lp-hero-art,
+  .lp-hero-art .phone, .lp-hero-art .screen .bubble,
+  .lp-section .lp-head, .lp-step, .lp-feature, .lp-price-card {
+    animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important;
+  }
+  .lp-hero-art .phone { transform: rotate(-3deg) !important; }
+}
+
 /* ---- Utilities -------------------------------------------------------- */
 .mt-4{margin-top:4px}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}.mt-32{margin-top:32px}
 .mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}

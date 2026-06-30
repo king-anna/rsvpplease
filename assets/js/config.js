@@ -15,10 +15,9 @@
    0001_init.sql) has been run on the project, or the app will error on load.
    ========================================================================= */
 window.RSVP_CONFIG = {
-  // "local"  -> localStorage store (works today, your own data)
-  // "supabase" -> Supabase (Postgres + Auth + Edge Functions). Flip AFTER the
-  //               migration has been run on project ehhitnddiudoxgzoxpys.
-  BACKEND: "local",
+  // "local"  -> localStorage store (your own data, no backend)
+  // "supabase" -> Supabase (Postgres + Auth + Edge Functions) — LIVE.
+  BACKEND: "supabase",
 
   SUPABASE_URL: "https://ehhitnddiudoxgzoxpys.supabase.co",
   SUPABASE_ANON_KEY:
