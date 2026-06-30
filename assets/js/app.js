@@ -123,7 +123,7 @@
     return `<span class="lp-avstack">${names.map((n, i) =>
       `<span class="lp-av" style="width:${size}px;height:${size}px;background:${cols[i % cols.length]}">${esc((n[0] || "·").toUpperCase())}</span>`).join("")}</span>`;
   }
-  const lpLogo = `<a href="#/" aria-label="RSVP please" style="display:inline-flex;align-items:center;text-decoration:none">
+  const lpLogo = `<a href="/" aria-label="RSVP please" style="display:inline-flex;align-items:center;text-decoration:none">
     <span style="position:relative;display:inline-flex;align-items:baseline;background:var(--brand-primary);color:#fff;
       border-radius:.7em .7em .7em .18em;padding:.16em .5em .2em;font-family:var(--lp-display);font-weight:700;font-size:23px;letter-spacing:-.02em;line-height:1">
       <span style="font-weight:800;letter-spacing:.01em">RSVP</span>
@@ -149,7 +149,7 @@
   }
 
   function lpNav(active) {
-    const links = [["How it works", "#/how", "how"], ["Templates", "#/templates", "templates"], ["Pricing", "#/pricing", "pricing"], ["Stories", "#/stories", "stories"]];
+    const links = [["How it works", "/how", "how"], ["Templates", "/templates", "templates"], ["Pricing", "/pricing", "pricing"], ["Stories", "/stories", "stories"]];
     return `<nav class="lp-nav"><div class="lp-container lp-nav__inner">
       ${lpLogo}
       <div class="lp-nav__links">
@@ -166,16 +166,16 @@
     return `<footer class="lp-footer"><div class="lp-container">
       <div class="lp-footer__grid">
         <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
-        ${col("Product", [["How it works", "#/how"], ["Pricing", "#/pricing"], ["Templates", "#/templates"]])}
-        ${col("Company", [["Stories", "#/stories"]])}
-        ${col("Get started", [["Sign in", "#/signin"]])}
+        ${col("Product", [["How it works", "/how"], ["Pricing", "/pricing"], ["Templates", "/templates"]])}
+        ${col("Company", [["Stories", "/stories"]])}
+        ${col("Get started", [["Sign in", "/#/signin"]])}
       </div>
       <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
     </div></footer>`;
   }
   function lpShell(active, inner) {
     app.innerHTML = `<div class="lp-root">${lpNav(active)}${inner}${lpFooter()}</div>`;
-    app.querySelectorAll("[data-start],[data-signin]").forEach((b) => b.addEventListener("click", () => go("#/signin")));
+    app.querySelectorAll("[data-start],[data-signin]").forEach((b) => b.addEventListener("click", () => { location.href = "/#/signin"; }));
     lpReveal();
     window.scrollTo(0, 0);
   }
@@ -220,7 +220,7 @@
           <p class="lp-lede">Send each guest a personal RSVP link by text or email, then let RSVPplease nudge the no-shows by SMS — so you always have a real headcount.</p>
           <div class="lp-hero__cta">
             <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite ${lpIcon("arrow", 18)}</button>
-            <a class="lp-btn lp-btn--outline lp-btn--lg" href="#/how">See how it works</a>
+            <a class="lp-btn lp-btn--outline lp-btn--lg" href="/how">See how it works</a>
           </div>
           <div class="lp-trust">
             ${lpAvatars(["Maya", "Sam", "Lena", "Ben", "Ada"], 34)}
@@ -1080,9 +1080,21 @@
   /*  ROUTER                                                                */
   /* ===================================================================== */
   async function render() {
+    // Prerendered marketing page (static HTML sets data-route on #app). Render
+    // it immediately — these views don't need the auth check, so it's fast and
+    // crawler-friendly.
+    const pathRoute = app.dataset.route || "";
+    if (pathRoute) {
+      setMeta(pathRoute);
+      if (pathRoute === "how") return viewHowItWorks();
+      if (pathRoute === "templates") return viewTemplatesPage();
+      if (pathRoute === "pricing") return viewPricing();
+      if (pathRoute === "stories") return viewStories();
+    }
+
     host = await window.Api.getHost();
 
-    // Public marketing pages (accessible signed-in or out).
+    // Hash routes (root index.html): marketing fallbacks, auth + dashboard.
     const mroot = (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
     setMeta(mroot);
     if (mroot === "how") return viewHowItWorks();
