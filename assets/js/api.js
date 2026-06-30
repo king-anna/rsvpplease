@@ -247,10 +247,12 @@
     priceFor(guestCount) {
       const base = cfg.PRICE_BASE_CENTS;
       const per = cfg.PRICE_PER_GUEST_CENTS;
+      const included = cfg.PRICE_BASE_INCLUDED || 0;
+      const extra = Math.max(0, guestCount - included);
       return {
-        base, per, guestCount,
-        perTotal: per * guestCount,
-        totalCents: base + per * guestCount,
+        base, per, guestCount, included, extra,
+        perTotal: per * extra,
+        totalCents: base + per * extra,
       };
     },
     async checkout(eventId) {

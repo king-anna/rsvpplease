@@ -243,13 +243,16 @@
     const sendPanel = (() => {
       if (!ev.paidAt) {
         const price = window.Api.priceFor(guests.length);
+        const extraTxt = price.extra > 0
+          ? ` + ${money(price.per)} × ${price.extra} extra`
+          : "";
         return `
           <div class="card ticket reveal" style="background:var(--rose-soft);border:none">
             <div class="row between wrap gap-16">
               <div>
                 <div class="eyebrow">Ready to send</div>
                 <h3 style="margin-top:4px">Pay &amp; send ${guests.length} invitation${guests.length === 1 ? "" : "s"}</h3>
-                <p class="muted" style="font-size:.9rem">${money(price.base)} base + ${money(price.per)} × ${guests.length} guest${guests.length === 1 ? "" : "s"}
+                <p class="muted" style="font-size:.9rem">${money(price.base)} base (up to ${price.included})${extraTxt}
                   = <b style="color:var(--rose-deep)">${money(price.totalCents)}</b></p>
               </div>
               <button class="btn primary lg" id="ev-pay" ${guests.length ? "" : "disabled"}>${icon("send")} Pay &amp; send</button>
@@ -414,8 +417,8 @@
       const p = window.Api.priceFor(guests.length);
       const body = el(`<div>
         <div class="card flat" style="background:var(--surface-soft);border:1px solid var(--line)">
-          <div class="price-line"><span>Base fee</span><span class="tabular">${money(p.base)}</span></div>
-          <div class="price-line"><span>${guests.length} guest${guests.length === 1 ? "" : "s"} × ${money(p.per)}</span><span class="tabular">${money(p.perTotal)}</span></div>
+          <div class="price-line"><span>Base fee <span class="faint">(up to ${p.included} guests)</span></span><span class="tabular">${money(p.base)}</span></div>
+          ${p.extra > 0 ? `<div class="price-line"><span>${p.extra} extra guest${p.extra === 1 ? "" : "s"} × ${money(p.per)}</span><span class="tabular">${money(p.perTotal)}</span></div>` : ""}
           <div class="price-line total"><span>Total today</span><span class="amt tabular">${money(p.totalCents)}</span></div>
         </div>
         <div class="notice rose mt-16">${icon("info")}

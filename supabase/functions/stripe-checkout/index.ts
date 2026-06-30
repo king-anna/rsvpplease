@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     //   0  → flat $10 base + $1 × every guest  (matches the dashboard estimate)
     //   9  → $10 covers up to 9, $1 from the 10th ("under 10 people")
     //   10 → $10 covers up to 10, $1 from the 11th
-    const included = Number(Deno.env.get("STRIPE_BASE_INCLUDED") ?? 0);
+    const included = Number(Deno.env.get("STRIPE_BASE_INCLUDED") ?? 10);
     const extraQty = Math.max(0, guestCount - included);
 
     const base = Number(Deno.env.get("PRICE_BASE_CENTS") ?? 1000);

@@ -24,9 +24,11 @@ window.RSVP_CONFIG = {
   SUPABASE_ANON_KEY:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaGl0bmRkaXVkb3hnem94cHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzODAwNjMsImV4cCI6MjA5Nzk1NjA2M30.abAdZ8fJLIGyIHuLh4oaXq1SA-eIkXZL7kowTKal8ig",
 
-  // Pricing (cents). $10 base + $1 per invited guest.
+  // Pricing (cents). $10 base covers up to PRICE_BASE_INCLUDED guests; each
+  // guest beyond that is PRICE_PER_GUEST_CENTS. Mirror STRIPE_BASE_INCLUDED.
   PRICE_BASE_CENTS: 1000,
   PRICE_PER_GUEST_CENTS: 100,
+  PRICE_BASE_INCLUDED: 10,
   CURRENCY: "usd",
 
   // Default follow-up cadence applied to new events.
