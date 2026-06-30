@@ -73,6 +73,29 @@
 
   const val = (id) => (document.getElementById(id)?.value || "").trim();
 
+  /* ---- Per-page SEO meta (title <60 chars, description <160) ----------- */
+  const META = {
+    "":        ["RSVPplease — RSVP invitations by text & email", "Send RSVP links by SMS or email, track who's coming, and auto-nudge the no-shows. $10 per event — no subscription."],
+    how:       ["How RSVPplease works — SMS & email RSVPs", "Add guests, send invites by text or email, and let RSVPplease auto-nudge non-responders until your headcount is locked in."],
+    templates: ["Message templates — RSVPplease", "Customise your invite, nudge and yes/no auto-replies for SMS and email, with a live phone preview as you type."],
+    pricing:   ["Pricing — RSVPplease", "$10 per event covers up to 10 guests, then $1 each. No subscription — pay only when you send your invitations."],
+    stories:   ["Why RSVPplease works", "Two-way SMS, automatic nudges and a real headcount for your next event — see why guests actually reply."],
+    signin:    ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
+    login:     ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
+    events:    ["Your events — RSVPplease", "Manage your events, guests and RSVPs — and let RSVPplease chase the replies for you."],
+    inbox:     ["Activity — RSVPplease", "Every outgoing invite and every reply, in one two-way SMS and email feed."],
+    admin:     ["Admin — RSVPplease", "Manage users, comped access and revenue across RSVPplease."],
+    new:       ["New event — RSVPplease", "Create an event and start collecting RSVPs by text and email."],
+    event:     ["Event — RSVPplease", "Track who's confirmed and send invites and nudges by SMS and email."],
+  };
+  function setMeta(key) {
+    const m = META[key] || META[""];
+    document.title = m[0];
+    const set = (sel) => { const el = document.head.querySelector(sel); if (el) el.setAttribute("content", m[/title/.test(sel) ? 0 : 1]); };
+    ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]',
+     'meta[name="twitter:title"]', 'meta[name="twitter:description"]'].forEach(set);
+  }
+
   /* ===================================================================== */
   /*  MARKETING SITE (imported "Rally" design — public pages)              */
   /* ===================================================================== */
@@ -1061,6 +1084,7 @@
 
     // Public marketing pages (accessible signed-in or out).
     const mroot = (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
+    setMeta(mroot);
     if (mroot === "how") return viewHowItWorks();
     if (mroot === "templates" && !location.hash.includes("/event/")) return viewTemplatesPage();
     if (mroot === "pricing") return viewPricing();
