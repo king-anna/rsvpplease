@@ -1,0 +1,60 @@
+name: Deploy frontend to Cloudflare Pages
+
+# Creates the Pages project (if needed), deploys the static site, and attaches
+# the custom domain rsvpplease.app. Triggered on push to main (frontend files)
+# or manually: `gh workflow run cloudflare-deploy.yml`.
+#
+# Requires two repository secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — token with: Account › Cloudflare Pages › Edit,
+#                           and Zone › DNS › Edit (for rsvpplease.app)
+#   CLOUDFLARE_ACCOUNT_ID — dash.cloudflare.com → right sidebar → Account ID
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "rsvp.html"
+      - "manifest.webmanifest"
+      - "assets/**"
+
+env:
+  PROJECT: rsvpplease
+  DOMAIN: rsvpplease.app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble static site
+        run: |
+          mkdir -p dist
+          cp index.html rsvp.html manifest.webmanifest dist/
+          cp -r assets dist/
+
+      - name: Create Pages project (idempotent)
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create ${{ env.PROJECT }} --production-branch=main
+
+      - name: Deploy to Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ env.PROJECT }} --branch=main --commit-dirty=true
+
+      - name: Attach custom domain ${{ env.DOMAIN }} (idempotent)
+        continue-on-error: true
+        run: |
+          curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/${{ env.PROJECT }}/domains" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data "{\"name\":\"${{ env.DOMAIN }}\"}" | tail -c 600 ; echo
