@@ -74,7 +74,7 @@
   const val = (id) => (document.getElementById(id)?.value || "").trim();
 
   /* ===================================================================== */
-  /*  LANDING (imported "Rally" design — shown to signed-out visitors)     */
+  /*  MARKETING SITE (imported "Rally" design — public pages)              */
   /* ===================================================================== */
   function lpIcon(name, size = 18) {
     const D = {
@@ -83,9 +83,14 @@
       send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
       chat: "M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z",
       check: "M20 6 9 17l-5-5",
+      x: "M18 6 6 18M6 6l12 12",
       calendar: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
       pin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
       sliders: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+      mail: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 7l-10 6L2 7",
+      bell: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+      users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+      plus: "M12 5v14M5 12h14",
     };
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${D[name] || D.check}"/></svg>`;
@@ -103,6 +108,65 @@
       <span style="position:absolute;left:.55em;bottom:-.26em"><svg width=".36em" height=".36em" viewBox="0 0 20 20" style="display:block;overflow:visible" aria-hidden="true"><path d="M2 2 L18 2 L2 18 Z" fill="var(--brand-primary)"/></svg></span>
     </span></a>`;
 
+  function lpReveal() {
+    const root = app.querySelector(".lp-root");
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!root || reduce) return;
+    const els = [].slice.call(app.querySelectorAll(".lp-reveal"));
+    root.classList.add("lp-animate");
+    const show = (el) => el.classList.add("is-in");
+    const inView = (el) => { const r = el.getBoundingClientRect(); return r.top < innerHeight * 0.92 && r.bottom > 0; };
+    requestAnimationFrame(() => els.forEach((el) => { if (inView(el)) show(el); }));
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } }),
+        { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
+      els.forEach((el) => io.observe(el));
+    }
+    setTimeout(() => els.forEach(show), 1500);
+  }
+
+  function lpNav(active) {
+    const links = [["How it works", "#/how", "how"], ["Templates", "#/templates", "templates"], ["Pricing", "#/pricing", "pricing"], ["Stories", "#/stories", "stories"]];
+    return `<nav class="lp-nav"><div class="lp-container lp-nav__inner">
+      ${lpLogo}
+      <div class="lp-nav__links">
+        ${links.map(([l, h, k]) => `<a class="lp-link ${active === k ? "mk-link--active" : ""}" href="${h}">${l}</a>`).join("")}
+      </div>
+      <div class="lp-nav__cta">
+        <button class="lp-btn lp-btn--ghost lp-btn--sm lp-hide-sm" data-signin>Log in</button>
+        <button class="lp-btn lp-btn--primary lp-btn--sm" data-start>Start an invite ${lpIcon("arrow", 16)}</button>
+      </div>
+    </div></nav>`;
+  }
+  function lpFooter() {
+    const col = (h, items) => `<div class="lp-footer__col"><h5>${h}</h5>${items.map(([l, href]) => `<a href="${href}" class="lp-link">${l}</a>`).join("")}</div>`;
+    return `<footer class="lp-footer"><div class="lp-container">
+      <div class="lp-footer__grid">
+        <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
+        ${col("Product", [["How it works", "#/how"], ["Pricing", "#/pricing"], ["Templates", "#/templates"]])}
+        ${col("Company", [["Stories", "#/stories"]])}
+        ${col("Get started", [["Sign in", "#/signin"]])}
+      </div>
+      <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
+    </div></footer>`;
+  }
+  function lpShell(active, inner) {
+    app.innerHTML = `<div class="lp-root">${lpNav(active)}${inner}${lpFooter()}</div>`;
+    app.querySelectorAll("[data-start],[data-signin]").forEach((b) => b.addEventListener("click", () => go("#/signin")));
+    lpReveal();
+    window.scrollTo(0, 0);
+  }
+
+  function lpFeature(tone, ic, title, body) {
+    return `<div class="lp-feat lp-reveal"><span class="lp-feat__icon lp-feat__icon--${tone}">${lpIcon(ic, 24)}</span>
+      <h3 class="lp-feat__title">${esc(title)}</h3><p class="lp-feat__body">${esc(body)}</p></div>`;
+  }
+  function lpStep(n, t, d) {
+    return `<div class="lp-step lp-reveal"><span class="lp-step__n">${n}</span>
+      <div><h4 class="lp-step__t">${esc(t)}</h4><p class="lp-step__d">${esc(d)}</p></div></div>`;
+  }
+
+  /* ---- Landing --------------------------------------------------------- */
   function lpHeroArt() {
     return `
       <div class="lp-art lp-reveal">
@@ -124,133 +188,255 @@
         <div class="lp-chip"><span class="lp-chip__check">${lpIcon("check", 14)}</span><span>Sam just RSVP'd <b>yes</b></span></div>
       </div>`;
   }
-  function lpFeature(tone, ic, title, body) {
-    return `<div class="lp-feat lp-reveal"><span class="lp-feat__icon lp-feat__icon--${tone}">${lpIcon(ic, 24)}</span>
-      <h3 class="lp-feat__title">${esc(title)}</h3><p class="lp-feat__body">${esc(body)}</p></div>`;
-  }
-  function lpStep(n, t, d) {
-    return `<div class="lp-step lp-reveal"><span class="lp-step__n">${n}</span>
-      <div><h4 class="lp-step__t">${esc(t)}</h4><p class="lp-step__d">${esc(d)}</p></div></div>`;
-  }
-  function lpFootCol(h, items) {
-    return `<div class="lp-footer__col"><h5>${esc(h)}</h5>${items.map((i) => `<a href="#/" class="lp-link">${esc(i)}</a>`).join("")}</div>`;
-  }
-
   function viewLanding() {
-    app.innerHTML = `
-      <div class="lp-root">
-        <nav class="lp-nav"><div class="lp-container lp-nav__inner">
-          ${lpLogo}
-          <div class="lp-nav__links">
-            <button class="lp-link" data-scroll="how">How it works</button>
-            <button class="lp-link" data-scroll="pricing">Pricing</button>
+    lpShell("", `
+      <header class="lp-hero"><div class="lp-container lp-hero__grid">
+        <div class="lp-hero__copy lp-reveal">
+          <span class="lp-eyebrow">${lpIcon("spark", 15)} No more “did you get my text?”</span>
+          <h1 class="lp-h1">Invitations your guests <span class="lp-underline">actually reply to</span>.</h1>
+          <p class="lp-lede">Send each guest a personal RSVP link by text or email, then let RSVPplease nudge the no-shows by SMS — so you always have a real headcount.</p>
+          <div class="lp-hero__cta">
+            <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite ${lpIcon("arrow", 18)}</button>
+            <a class="lp-btn lp-btn--outline lp-btn--lg" href="#/how">See how it works</a>
           </div>
-          <div class="lp-nav__cta">
-            <button class="lp-btn lp-btn--ghost lp-btn--sm lp-hide-sm" data-signin>Log in</button>
-            <button class="lp-btn lp-btn--primary lp-btn--sm" data-start>Start an invite ${lpIcon("arrow", 16)}</button>
+          <div class="lp-trust">
+            ${lpAvatars(["Maya", "Sam", "Lena", "Ben", "Ada"], 34)}
+            <span>Send by <b>text or email</b> · pay only when you send</span>
           </div>
-        </div></nav>
+        </div>
+        ${lpHeroArt()}
+      </div></header>
 
-        <header class="lp-hero"><div class="lp-container lp-hero__grid">
-          <div class="lp-hero__copy lp-reveal">
-            <span class="lp-eyebrow">${lpIcon("spark", 15)} No more “did you get my text?”</span>
-            <h1 class="lp-h1">Invitations your guests <span class="lp-underline">actually reply to</span>.</h1>
-            <p class="lp-lede">Send each guest a personal RSVP link by text or email, then let RSVPplease nudge the no-shows by SMS — so you always have a real headcount.</p>
-            <div class="lp-hero__cta">
-              <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite ${lpIcon("arrow", 18)}</button>
-              <button class="lp-btn lp-btn--outline lp-btn--lg" data-scroll="how">See how it works</button>
-            </div>
-            <div class="lp-trust">
-              ${lpAvatars(["Maya", "Sam", "Lena", "Ben", "Ada"], 34)}
-              <span>Send by <b>text or email</b> · pay only when you send</span>
-            </div>
-          </div>
-          ${lpHeroArt()}
-        </div></header>
+      <section class="lp-section"><div class="lp-container">
+        <div class="lp-section__head lp-reveal">
+          <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Why hosts pick us</span>
+          <h2 class="lp-h2">Everything an invite should do — nothing it shouldn't.</h2>
+        </div>
+        <div class="lp-feat-grid">
+          ${lpFeature("pink", "sliders", "Make it yours", "Write the invite, the nudge, and the yes/no replies in your own words — with a live preview as you type.")}
+          ${lpFeature("navy", "send", "Send anywhere", "Text it straight to phones or email it — chosen per guest. No app to download, no account for guests to make.")}
+          ${lpFeature("gold", "chat", "We chase the RSVPs", "Haven't heard back? RSVPplease sends a friendly SMS nudge and logs the reply. Your headcount keeps itself up to date.")}
+        </div>
+      </div></section>
 
-        <section class="lp-section" id="lp-how"><div class="lp-container">
-          <div class="lp-section__head lp-reveal">
-            <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Why hosts pick us</span>
-            <h2 class="lp-h2">Everything an invite should do — nothing it shouldn't.</h2>
-          </div>
-          <div class="lp-feat-grid">
-            ${lpFeature("pink", "sliders", "Make it yours", "Write the invite, the nudge, and the yes/no replies in your own words — with a live preview as you type.")}
-            ${lpFeature("navy", "send", "Send anywhere", "Text it straight to phones or email it — chosen per guest. No app to download, no account for guests to make.")}
-            ${lpFeature("gold", "chat", "We chase the RSVPs", "Haven't heard back? RSVPplease sends a friendly SMS nudge and logs the reply. Your headcount keeps itself up to date.")}
-          </div>
-        </div></section>
+      <section class="lp-section lp-section--tight"><div class="lp-container">
+        <div class="lp-steps">
+          ${lpStep("1", "Add your guests", "Name + mobile or email. Paste a whole list at once — phones and emails sort themselves.")}
+          ${lpStep("2", "Pay & send", "$10 covers up to 10 guests ($1 each beyond). Every guest gets a unique RSVP link.")}
+          ${lpStep("3", "We auto-nudge", "Anyone who goes quiet gets a gentle SMS follow-up until your headcount is locked.")}
+        </div>
+      </div></section>
 
-        <section class="lp-section lp-section--tight"><div class="lp-container">
-          <div class="lp-steps">
-            ${lpStep("1", "Add your guests", "Name + mobile or email. Paste a whole list at once — phones and emails sort themselves.")}
-            ${lpStep("2", "Pay & send", "$10 covers up to 10 guests ($1 each beyond). Every guest gets a unique RSVP link.")}
-            ${lpStep("3", "We auto-nudge", "Anyone who goes quiet gets a gentle SMS follow-up until your headcount is locked.")}
+      <section class="lp-band"><div class="lp-container lp-band__grid">
+        <div class="lp-reveal">
+          <span class="lp-eyebrow lp-eyebrow--ink">${lpIcon("chat", 15)} The RSVPplease difference</span>
+          <h2 class="lp-h2 lp-h2--light">People don't RSVP. So we text them.</h2>
+          <p class="lp-band__lede">Set it once and RSVPplease follows up with anyone who hasn't replied — by SMS, in your event's voice. Replies sync to your guest list automatically. You just watch the “going” number climb.</p>
+          <div class="lp-band__stats">
+            <div><strong>2-way</strong><span>SMS conversations, logged</span></div>
+            <div><strong>$10</strong><span>flat — up to 10 guests</span></div>
+            <div><strong>0</strong><span>apps for guests to install</span></div>
           </div>
-        </div></section>
+        </div>
+        <div class="lp-thread lp-reveal">
+          <div class="lp-thread__row lp-thread__row--in">${lpAvatars(["R"], 30)}<div class="lp-thread__msg">Quick one! Are you coming to Maya's 30th on Sat? Reply YES / NO</div></div>
+          <div class="lp-thread__row lp-thread__row--out"><div class="lp-thread__msg lp-thread__msg--out">YES — putting it in the calendar now</div></div>
+          <div class="lp-thread__row lp-thread__row--in">${lpAvatars(["R"], 30)}<div class="lp-thread__msg">Amazing 🎉 You're on the list. We'll text the address Friday.</div></div>
+          <div class="lp-thread__synced"><span class="lp-badge-going">${lpIcon("check", 13)} Guest list updated · 25 going</span></div>
+        </div>
+      </div></section>
 
-        <section class="lp-band"><div class="lp-container lp-band__grid">
-          <div class="lp-reveal">
-            <span class="lp-eyebrow lp-eyebrow--ink">${lpIcon("chat", 15)} The RSVPplease difference</span>
-            <h2 class="lp-h2 lp-h2--light">People don't RSVP. So we text them.</h2>
-            <p class="lp-band__lede">Set it once and RSVPplease follows up with anyone who hasn't replied — by SMS, in your event's voice. Replies sync to your guest list automatically. You just watch the “going” number climb.</p>
-            <div class="lp-band__stats">
-              <div><strong>2-way</strong><span>SMS conversations, logged</span></div>
-              <div><strong>$10</strong><span>flat — up to 10 guests</span></div>
-              <div><strong>0</strong><span>apps for guests to install</span></div>
-            </div>
+      <section class="lp-section"><div class="lp-container">
+        <div class="lp-final lp-reveal">
+          <h2 class="lp-h2">Your next party is one invite away.</h2>
+          <p class="lp-final__sub">$10 per event, up to 10 guests — then $1 each. No subscription; pay only when you send.</p>
+          <div class="lp-hero__cta lp-hero__cta--center">
+            <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button>
           </div>
-          <div class="lp-thread lp-reveal">
-            <div class="lp-thread__row lp-thread__row--in">${lpAvatars(["R"], 30)}<div class="lp-thread__msg">Quick one! Are you coming to Maya's 30th on Sat? Reply YES / NO</div></div>
-            <div class="lp-thread__row lp-thread__row--out"><div class="lp-thread__msg lp-thread__msg--out">YES — putting it in the calendar now</div></div>
-            <div class="lp-thread__row lp-thread__row--in">${lpAvatars(["R"], 30)}<div class="lp-thread__msg">Amazing 🎉 You're on the list. We'll text the address Friday.</div></div>
-            <div class="lp-thread__synced"><span class="lp-badge-going">${lpIcon("check", 13)} Guest list updated · 25 going</span></div>
+        </div>
+      </div></section>`);
+  }
+
+  /* ---- How it works ---------------------------------------------------- */
+  function mkWStep(badge, ic, title, desc, bullets, media) {
+    return `<div class="mk-wstep lp-reveal">
+      <div>
+        <span class="mk-wstep__badge"><i>${badge}</i> ${lpIcon(ic, 15)} Step ${badge}</span>
+        <h2 class="mk-wstep__t">${esc(title)}</h2>
+        <p class="mk-wstep__d">${esc(desc)}</p>
+        <ul class="mk-wlist">${bullets.map((b) => `<li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>${esc(b)}</li>`).join("")}</ul>
+      </div>
+      <div class="mk-wstep__media"><div class="mk-frame"><div class="mk-frame__body">${media}</div></div></div>
+    </div>`;
+  }
+  function viewHowItWorks() {
+    const canvas = `<div class="mk-canvas">
+      <div class="mk-canvas__bar">${["#E58AA9", "#243763", "#F0C277"].map((c) => `<span class="mk-swatch" style="background:${c}"></span>`).join("")}
+        <span class="mk-fontchip">Bricolage</span><span class="mk-fontchip">DM Sans</span></div>
+      <div class="mk-canvas__title">Maya's Rooftop 30th</div>
+      <div class="mk-canvas__line" style="width:80%"></div><div class="mk-canvas__line" style="width:60%"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">${lpAvatars(["Maya", "Sam", "Lena", "Ben"], 26)}</div>
+    </div>`;
+    const phone1 = `<div class="mk-phone"><div class="mk-phone__screen">
+      <div class="mk-phone__hd"><span class="mk-phone__dot"></span> RSVPPLEASE · SMS</div>
+      <div class="mk-bub mk-bub--out">Hi Sam! You're invited to Maya's 30th on Sat. RSVP: rsvpplease.app/r/… or reply YES/NO 💌</div>
+      <div class="mk-bub mk-bub--in">YES!! 🎉</div></div></div>`;
+    const phone2 = `<div class="mk-phone"><div class="mk-phone__screen">
+      <div class="mk-phone__hd"><span class="mk-phone__dot"></span> AUTO-NUDGE</div>
+      <div class="mk-bub mk-bub--out">Gentle nudge, Jo! Still hoping you can make Maya's 30th — can you let us know? 💕</div>
+      <div class="mk-bub mk-bub--in">Yes sorry! count me in</div>
+      <div class="mk-bub mk-bub--out">Amazing — you're on the list ✅</div></div></div>`;
+    lpShell("how", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} How it works</span>
+        <h1 class="lp-h1">From guest list to a <span class="lp-underline">real headcount</span>.</h1>
+        <p class="mk-phero__lede">Three steps — add your guests, send the invites, and let RSVPplease chase the no-shows by text. No app for anyone to install.</p>
+      </div></header>
+      <section class="lp-section" style="padding-top:12px"><div class="lp-container"><div class="mk-walk">
+        ${mkWStep("1", "sliders", "Add your guests & make it yours", "Add guests by name and mobile or email — or paste your whole list and we sort phones from emails. Then write the invite, nudge and replies in your own words, with a live preview.", ["Bulk paste a guest list in seconds", "Customise all four messages (SMS + email)", "Choose each guest's channel: text, email, or both"], canvas)}
+        ${mkWStep("2", "send", "Pay once, send everywhere", "Pay $10 for up to 10 guests (then $1 each) and every guest gets a unique RSVP link by text and/or email. They tap to reply — or just text YES/NO back.", ["Stripe checkout — no subscription", "Unique, trackable link per guest", "Guests need no app and no account"], phone1)}
+        ${mkWStep("3", "bell", "We auto-nudge the no-shows", "Set it once and RSVPplease follows up with anyone who hasn't replied — by SMS, in your event's voice — then logs the answer to your guest list automatically.", ["Nudge after N hours, up to your limit", "Two-way replies sync instantly", "Watch the “going” count climb"], phone2)}
+      </div></div></section>
+      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">Ready when you are.</h2>
+        <p class="lp-final__sub">Free to start — pay only when you send.</p>
+        <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
+      </div></div></section>`);
+  }
+
+  /* ---- Pricing (real RSVPplease model — not the design's fake tiers) --- */
+  function viewPricing() {
+    const feat = (on, label) => `<li class="${on ? "" : "is-off"}">${lpIcon(on ? "check" : "x", 17)}${esc(label)}</li>`;
+    lpShell("pricing", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Simple, honest pricing</span>
+        <h1 class="lp-h1">Pay per event. <span class="lp-underline">No subscription</span>.</h1>
+        <p class="mk-phero__lede">Build your event and add guests for free. You only pay when you're ready to send the invitations.</p>
+      </div></header>
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        <div class="mk-tiers" style="grid-template-columns:minmax(0,420px);justify-content:center">
+          <div class="mk-tier mk-tier--feat lp-reveal">
+            <span class="mk-tier__flag">Pay only when you send</span>
+            <div class="mk-tier__name">Per event</div>
+            <p class="mk-tier__desc">Everything RSVPplease does, priced per party.</p>
+            <div class="mk-tier__price"><span class="mk-tier__amt">$10</span><span class="mk-tier__per">/ event</span></div>
+            <div class="mk-tier__note">covers up to 10 guests · then $1 per extra guest</div>
+            <div class="mk-tier__cta"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start style="width:100%">Start an invite ${lpIcon("arrow", 18)}</button></div>
+            <ul class="mk-tier__feats">
+              ${feat(true, "Up to 10 guests included")}
+              ${feat(true, "+$1 per extra guest")}
+              ${feat(true, "SMS & email invitations")}
+              ${feat(true, "Automatic SMS nudges")}
+              ${feat(true, "Two-way replies, logged")}
+              ${feat(true, "Customisable messages")}
+              ${feat(false, "No monthly fee — ever")}
+            </ul>
           </div>
-        </div></section>
+        </div>
+      </div></section>
+      <section class="lp-section lp-section--alt"><div class="lp-container">
+        <div class="lp-section__head lp-reveal">
+          <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Pricing FAQ</span>
+          <h2 class="lp-h2">No surprises on the bill.</h2>
+        </div>
+        <div class="mk-faq lp-reveal">
+          ${[["What does the $10 cover?", "One event with up to 10 guests — invitations by SMS and/or email, automatic nudges to non-responders, two-way replies, and a live guest list. Beyond 10 guests it's just $1 per extra guest."],
+             ["Is it really pay-per-event?", "Yes — no subscription and no monthly fee. You build the event and add guests for free, and only pay when you send the invites."],
+             ["Do my guests ever pay?", "Never. Guests receive their invite and reply completely free — no app and no account to create."],
+             ["Can I send by email instead of SMS?", "Both. You choose per guest whether they're invited by text, email, or both."]]
+            .map(([q, a], i) => `<details class="mk-faq__item" ${i === 0 ? "open" : ""}>
+              <summary class="mk-faq__q">${esc(q)}<span class="mk-faq__plus">${lpIcon("plus", 15)}</span></summary>
+              <p class="mk-faq__a">${esc(a)}</p></details>`).join("")}
+        </div>
+      </div></section>
+      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">Start free. Pay when you send.</h2>
+        <p class="lp-final__sub">No card to begin — just better RSVPs.</p>
+        <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
+      </div></div></section>`);
+  }
 
-        <section class="lp-section" id="lp-pricing"><div class="lp-container">
-          <div class="lp-final lp-reveal">
-            <h2 class="lp-h2">Your next party is one invite away.</h2>
-            <p class="lp-final__sub">$10 per event, up to 10 guests — then $1 each. No subscription; pay only when you send.</p>
-            <div class="lp-hero__cta lp-hero__cta--center">
-              <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button>
-            </div>
+  /* ---- Templates = the real customisable MESSAGE templates ------------- */
+  function viewTemplatesPage() {
+    const tpl = (c1, c2, kicker, title, meta) => `<div class="mk-tpl lp-reveal">
+      <div class="mk-tpl__art" style="--c1:${c1};--c2:${c2}">
+        <span class="mk-tpl__use">Customise ${lpIcon("arrow", 13)}</span>
+        <span class="mk-tpl__kicker">${esc(kicker)}</span>
+        <span class="mk-tpl__title">${esc(title)}</span>
+        <span class="mk-tpl__meta">${lpIcon("sliders", 13)} ${esc(meta)}</span>
+      </div></div>`;
+    lpShell("templates", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("sliders", 15)} Message templates</span>
+        <h1 class="lp-h1">Every text, <span class="lp-underline">in your words</span>.</h1>
+        <p class="mk-phero__lede">RSVPplease sends four messages on your behalf — and you control every one. Edit the wording, add variables like {{guest_name}}, and watch a live phone preview as you type.</p>
+      </div></header>
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        <div class="mk-tpl-grid">
+          ${tpl("#E58AA9", "#B86081", "You're invited!", "The invitation", "First message + RSVP link")}
+          ${tpl("#F0C277", "#B86C10", "Still hoping…", "The nudge", "Auto-sent to non-responders")}
+          ${tpl("#5BA77C", "#356E4D", "Yay! 🎉", "The “yes” reply", "Auto-confirms attendees")}
+          ${tpl("#243763", "#131C33", "Thanks for letting us know", "The “no” reply", "A warm regrets auto-reply")}
+        </div>
+      </div></section>
+      <section class="lp-section lp-section--alt"><div class="lp-container lp-split">
+        <div class="lp-split__copy lp-reveal">
+          <span class="lp-eyebrow">${lpIcon("mail", 15)} SMS & email</span>
+          <h2 class="lp-h2">Send the way each guest <span class="lp-underline">prefers</span>.</h2>
+          <p class="lp-lede">Every template works for both text and email. Pick a guest's channel and RSVPplease formats the message for it — same words, right place.</p>
+          <div style="margin-top:26px"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Customise yours ${lpIcon("arrow", 18)}</button></div>
+        </div>
+        <div class="lp-split__media lp-reveal">
+          <div class="mk-phone" style="width:250px"><div class="mk-phone__screen">
+            <div class="mk-phone__hd"><span class="mk-phone__dot"></span> LIVE PREVIEW</div>
+            <div class="mk-bub mk-bub--out">Hi Alex! 💌 You're invited to Mara & Theo's Garden Party on Sat 18 Jul. Tap to RSVP — or reply YES/NO.</div>
+          </div></div>
+        </div>
+      </div></section>
+      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">Make it sound like you.</h2>
+        <p class="lp-final__sub">Free to start — pay only when you send.</p>
+        <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
+      </div></div></section>`);
+  }
+
+  /* ---- Stories (honest — product value, not fabricated testimonials) --- */
+  function viewStories() {
+    const story = (metric, ml, q) => `<div class="mk-story lp-reveal">
+      <span class="mk-story__metric">${esc(metric)}</span>
+      <p class="mk-story__q">${esc(q)}</p>
+      <div class="mk-story__by"><span class="mk-story__name">${esc(ml)}</span></div></div>`;
+    lpShell("stories", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("chat", 15)} Stories</span>
+        <h1 class="lp-h1">Built for a <span class="lp-underline">full table</span>.</h1>
+        <p class="mk-phero__lede">RSVPplease is new — so instead of inventing testimonials, here's exactly why it works and what you can expect.</p>
+      </div></header>
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        <div class="mk-feature lp-reveal">
+          <div>
+            <span class="lp-eyebrow">${lpIcon("spark", 15)} The whole idea</span>
+            <p class="mk-feature__quote">“People don't reply to invites. So we text them — and they reply.”</p>
+            <div class="mk-feature__by">${lpAvatars(["R"], 42)}<div><div class="mk-feature__name">RSVPplease</div><div class="mk-feature__event">SMS + email RSVPs, with auto-nudges</div></div></div>
           </div>
-        </div></section>
-
-        <footer class="lp-footer"><div class="lp-container">
-          <div class="lp-footer__grid">
-            <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
-            ${lpFootCol("Product", ["How it works", "Pricing", "SMS nudges", "Guest lists"])}
-            ${lpFootCol("Company", ["About", "Contact"])}
-            ${lpFootCol("Support", ["Help center", "Privacy", "Terms"])}
+          <div class="lp-thread" style="background:var(--surface-card);border-color:var(--border-subtle)">
+            <div class="lp-thread__row lp-thread__row--in">${lpAvatars(["R"], 30)}<div class="lp-thread__msg" style="background:var(--surface-sunken);color:var(--text-body)">Are you coming to Maya's 30th on Sat? Reply YES / NO</div></div>
+            <div class="lp-thread__row lp-thread__row--out"><div class="lp-thread__msg lp-thread__msg--out">YES!</div></div>
+            <div class="lp-thread__synced"><span class="lp-badge-going" style="background:var(--brand-soft);color:var(--brand-primary-press);border-color:var(--border-brand)">${lpIcon("check", 13)} Guest list updated</span></div>
           </div>
-          <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
-        </div></footer>
-      </div>`;
-
-    app.querySelectorAll("[data-start],[data-signin]").forEach((b) => b.addEventListener("click", () => go("#/signin")));
-    app.querySelectorAll("[data-scroll]").forEach((b) => b.addEventListener("click", () => {
-      const map = { how: "#lp-how", pricing: "#lp-pricing" };
-      const el = document.querySelector(map[b.dataset.scroll] || "");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }));
-
-    // Reveal-on-scroll (matches the imported design: visible by default, JS hides-then-reveals).
-    const root = app.querySelector(".lp-root");
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (root && !reduce) {
-      const els = [].slice.call(app.querySelectorAll(".lp-reveal"));
-      root.classList.add("lp-animate");
-      const show = (el) => el.classList.add("is-in");
-      const inView = (el) => { const r = el.getBoundingClientRect(); return r.top < innerHeight * 0.92 && r.bottom > 0; };
-      requestAnimationFrame(() => els.forEach((el) => { if (inView(el)) show(el); }));
-      if ("IntersectionObserver" in window) {
-        const io = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { show(e.target); io.unobserve(e.target); } }),
-          { threshold: 0.1, rootMargin: "0px 0px -6% 0px" });
-        els.forEach((el) => io.observe(el));
-      }
-      setTimeout(() => els.forEach(show), 1500);
-    }
+        </div>
+        <div class="mk-story-grid">
+          ${story("2-way", "Real conversations", "Guests reply right in the text thread — YES, NO, or a question — and your headcount updates itself.")}
+          ${story("Auto", "No more chasing", "Set a nudge schedule once. Anyone who goes quiet gets a friendly follow-up until they reply.")}
+          ${story("$10", "Pay only to send", "No subscription. Build the event for free and pay per event when you're ready to send.")}
+        </div>
+        <p class="lp-trust lp-reveal" style="justify-content:center;margin-top:34px">Used RSVPplease for your event? <a href="#/signin" style="color:var(--brand-primary-press);font-weight:600;margin-left:6px">Share your story →</a></p>
+      </div></section>
+      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">Be one of the first.</h2>
+        <p class="lp-final__sub">Free to start — pay only when you send.</p>
+        <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
+      </div></div></section>`);
   }
   function showCheckEmail(email) {
     app.innerHTML = `
@@ -872,9 +1058,16 @@
   /* ===================================================================== */
   async function render() {
     host = await window.Api.getHost();
+
+    // Public marketing pages (accessible signed-in or out).
+    const mroot = (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
+    if (mroot === "how") return viewHowItWorks();
+    if (mroot === "templates" && !location.hash.includes("/event/")) return viewTemplatesPage();
+    if (mroot === "pricing") return viewPricing();
+    if (mroot === "stories") return viewStories();
+
     if (!host) {
-      const r0 = (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
-      return (r0 === "signin" || r0 === "login") ? viewAuth() : viewLanding();
+      return (mroot === "signin" || mroot === "login") ? viewAuth() : viewLanding();
     }
 
     const parts = (location.hash.replace(/^#\/?/, "") || "events").split("/");
