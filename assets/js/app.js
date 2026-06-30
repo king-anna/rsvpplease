@@ -39,6 +39,7 @@
           <nav class="nav">
             ${a("events", "Events", "calendar")}
             ${a("inbox", "Activity", "inbox")}
+            ${host && host.role === "admin" ? a("admin", "Admin", "users") : ""}
           </nav>
           <span class="spacer"></span>
           <div class="avatar" id="avatar" title="${esc(host ? host.name : "")}">${esc(initials(host && host.name))}</div>
@@ -344,6 +345,19 @@
     const uninvited = guests.filter((g) => !g.invitedAt).length;
 
     const sendPanel = (() => {
+      // Comped accounts (granted by an admin) send for free.
+      if (host.comped && !ev.paidAt) {
+        return `
+          <div class="card reveal" style="border-color:var(--ok)">
+            <div class="row between wrap gap-16">
+              <div>
+                <span class="pill ok"><span class="dot"></span>Comped · sending is free</span>
+                <p class="muted mt-8" style="font-size:.9rem">${guests.length - uninvited} of ${guests.length} guests invited.</p>
+              </div>
+              ${uninvited && guests.length ? `<button class="btn primary lg" id="ev-sendnew">${icon("send")} Send ${uninvited} invite${uninvited === 1 ? "" : "s"}</button>` : ""}
+            </div>
+          </div>`;
+      }
       if (!ev.paidAt) {
         const price = window.Api.priceFor(guests.length);
         const extraTxt = price.extra > 0
@@ -719,6 +733,65 @@
   }
 
   /* ===================================================================== */
+  /*  ADMIN DASHBOARD (role === "admin")                                   */
+  /* ===================================================================== */
+  async function viewAdmin() {
+    if (!host || host.role !== "admin") { go("#/events"); return; }
+    let users;
+    try {
+      users = await window.Api.adminOverview();
+    } catch (e) {
+      mount("admin", `<div class="page-head"><div><div class="eyebrow">Admin</div><h1>All users</h1></div></div>
+        <div class="notice">${icon("info")} <span>${esc(e.message || "Couldn't load users")}</span></div>`);
+      return;
+    }
+
+    const totalRevenue = users.reduce((s, u) => s + u.totalPaidCents, 0);
+    const compedCount = users.filter((u) => u.comped).length;
+    const eventCount = users.reduce((s, u) => s + u.events, 0);
+
+    const rows = users.map((u) => `
+      <tr data-user="${esc(u.userId)}">
+        <td><div class="name">${esc(u.name || "—")}</div><div class="tel">${esc(u.email || "")}</div></td>
+        <td>${u.role === "admin" ? `<span class="pill rose">admin</span>` : `<span class="pill">host</span>`}</td>
+        <td class="tabular">${u.events}</td>
+        <td class="tabular">${u.guests}</td>
+        <td class="tabular" style="font-weight:650">${money(u.totalPaidCents)}</td>
+        <td>${u.comped ? `<span class="pill ok"><span class="dot"></span>Comped</span>` : `<span class="muted" style="font-size:.82rem">—</span>`}</td>
+        <td style="text-align:right">
+          <button class="btn ${u.comped ? "ghost" : "soft"} sm" data-comp="${u.comped ? "0" : "1"}">
+            ${u.comped ? "Revoke comp" : "Comp free"}</button>
+        </td>
+      </tr>`).join("");
+
+    mount("admin", `
+      <div class="page-head"><div><div class="eyebrow">Admin</div><h1>All users</h1></div></div>
+      <div class="stats mb-24 reveal">
+        <div class="stat"><div class="n tabular">${users.length}</div><div class="k">Users</div></div>
+        <div class="stat ok"><div class="n tabular">${money(totalRevenue)}</div><div class="k">Total paid</div></div>
+        <div class="stat"><div class="n tabular">${compedCount}</div><div class="k">Comped</div></div>
+        <div class="stat"><div class="n tabular">${eventCount}</div><div class="k">Events</div></div>
+      </div>
+      <div class="card pad-0 reveal" style="overflow-x:auto">
+        ${users.length ? `<table class="table"><thead><tr>
+          <th>User</th><th>Role</th><th>Events</th><th>Guests</th><th>Paid</th><th>Access</th><th></th>
+        </tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty"><p class="muted">No users yet.</p></div>`}
+      </div>`);
+
+    app.querySelectorAll("[data-user]").forEach((row) => {
+      row.querySelector("[data-comp]")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          await window.Api.adminSetComped(row.dataset.user, btn.dataset.comp === "1");
+          toast(btn.dataset.comp === "1" ? "Comped — free access granted" : "Comp revoked", "ok");
+          render();
+        } catch (err) { toast(err.message || "Failed", "err"); btn.disabled = false; }
+      });
+    });
+  }
+
+  /* ===================================================================== */
   /*  ROUTER                                                                */
   /* ===================================================================== */
   async function render() {
@@ -734,6 +807,7 @@
       if (root === "events" || root === "") return viewEvents();
       if (root === "new") return viewEventForm(null);
       if (root === "inbox") return viewInbox();
+      if (root === "admin") return viewAdmin();
       if (root === "event" && a) {
         if (b === "edit") return viewEventForm(a);
         if (b === "templates") return viewTemplates(a);

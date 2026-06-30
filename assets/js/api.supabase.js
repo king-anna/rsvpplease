@@ -57,7 +57,13 @@
     async getHost() {
       const { data: { user } } = await sb.auth.getUser();
       if (!user) return null;
-      return { id: user.id, name: user.user_metadata?.name || user.email, email: user.email };
+      const { data: p } = await sb.from("profiles").select("role, comped, full_name").eq("id", user.id).maybeSingle();
+      return {
+        id: user.id, email: user.email,
+        name: (p && p.full_name) || user.user_metadata?.name || user.email,
+        role: (p && p.role) || "host",
+        comped: !!(p && p.comped),
+      };
     },
     async signIn({ name, email }) {
       const { error } = await sb.auth.signInWithOtp({
@@ -211,6 +217,22 @@
       if (error) throw error;
       sb.functions.invoke("notify-host", { body: { token } }).catch(() => {});
       return { ok: true, autoReply: (data && data.auto_reply) || "" };
+    },
+
+    /* Admin */
+    async adminOverview() {
+      const { data, error } = await sb.rpc("admin_overview");
+      if (error) throw error;
+      return (data || []).map((r) => ({
+        userId: r.user_id, email: r.email, name: r.full_name, role: r.role, comped: r.comped,
+        events: Number(r.events) || 0, guests: Number(r.guests) || 0,
+        totalPaidCents: Number(r.total_paid_cents) || 0, joined: ts(r.joined),
+      }));
+    },
+    async adminSetComped(userId, value) {
+      const { error } = await sb.rpc("admin_set_comped", { target: userId, value });
+      if (error) throw error;
+      return { ok: true };
     },
   };
 

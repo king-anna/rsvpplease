@@ -86,7 +86,12 @@
   /* ---- Local (Phase 1) implementation ---------------------------------- */
   const local = {
     /* Auth */
-    async getHost() { return window.Store.load().host; },
+    async getHost() {
+      const h = window.Store.load().host;
+      return h ? Object.assign({ role: "host", comped: false }, h) : null;
+    },
+    async adminOverview() { return []; },
+    async adminSetComped() { return { ok: true }; },
     async signIn({ name, email }) {
       const db = window.Store.load();
       db.host = db.host || { id: window.Store.uid("h"), name, email };

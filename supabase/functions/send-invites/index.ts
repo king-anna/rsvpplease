@@ -17,7 +17,11 @@ Deno.serve(async (req) => {
     const db = adminClient();
     const { data: event } = await db.from("events").select("*").eq("id", event_id).single();
     if (!event || event.host_id !== user.id) return json({ error: "not found" }, 404);
-    if (!event.paid_at) return json({ error: "PAYMENT_REQUIRED" }, 402);
+
+    // Comped hosts (granted by an admin) can send without paying.
+    const { data: prof } = await db.from("profiles").select("comped").eq("id", event.host_id).maybeSingle();
+    const comped = prof?.comped === true;
+    if (!event.paid_at && !comped) return json({ error: "PAYMENT_REQUIRED" }, 402);
 
     const hostName = user.user_metadata?.name || "your host";
     const result = await dispatchInvites(db, event, hostName);
