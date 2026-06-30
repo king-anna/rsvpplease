@@ -26,24 +26,32 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true }).eq("event_id", event_id);
     const guestCount = count ?? 0;
 
+    // Stripe Price IDs (one-time). Overridable via env; defaults are the
+    // products you created. Base = $10; Extra = $1 per person.
+    const basePrice = Deno.env.get("STRIPE_PRICE_BASE") || "price_1To0F0L3t6lGRaBqic1AbuER";
+    const extraPrice = Deno.env.get("STRIPE_PRICE_EXTRA") || "price_1To0FJL3t6lGRaBqNN9syoTe";
+
+    // Quantity of the $1 "extra person" line. `BASE_INCLUDED` guests are covered
+    // by the base fee; everyone beyond that is billed per head.
+    //   0  → flat $10 base + $1 × every guest  (matches the dashboard estimate)
+    //   9  → $10 covers up to 9, $1 from the 10th ("under 10 people")
+    //   10 → $10 covers up to 10, $1 from the 11th
+    const included = Number(Deno.env.get("STRIPE_BASE_INCLUDED") ?? 0);
+    const extraQty = Math.max(0, guestCount - included);
+
     const base = Number(Deno.env.get("PRICE_BASE_CENTS") ?? 1000);
     const per = Number(Deno.env.get("PRICE_PER_GUEST_CENTS") ?? 100);
-    const amount = base + per * guestCount;
+    const amount = base + per * extraQty;
     const site = (Deno.env.get("PUBLIC_SITE_URL") || "").replace(/\/$/, "");
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: basePrice, quantity: 1 },
+    ];
+    if (extraQty > 0) lineItems.push({ price: extraPrice, quantity: extraQty });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{
-        quantity: 1,
-        price_data: {
-          currency: Deno.env.get("STRIPE_CURRENCY") || "usd",
-          unit_amount: amount,
-          product_data: {
-            name: `RSVPplease — ${event.name}`,
-            description: `Invitations for ${guestCount} guest(s) ($10 base + $1/guest)`,
-          },
-        },
-      }],
+      line_items: lineItems,
       customer_email: user.email ?? undefined,
       success_url: success_url || `${site}/index.html#/event/${event_id}?paid=1`,
       cancel_url: cancel_url || `${site}/index.html#/event/${event_id}`,
