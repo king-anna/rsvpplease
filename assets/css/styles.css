@@ -636,7 +636,10 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   .lp-art{height:430px;margin-top:8px;}
   .lp-feat-grid,.lp-steps{grid-template-columns:1fr;}
   .lp-footer__grid{grid-template-columns:1fr 1fr;}
-  .lp-nav__links{display:none;}
+  /* keep the page links visible on narrow screens — wrap to a 2nd row */
+  .lp-nav__inner{flex-wrap:wrap;height:auto;padding:10px 0;row-gap:10px;}
+  .lp-nav__links{order:3;width:100%;justify-content:center;gap:8px 18px;font-size:14px;flex-wrap:wrap;margin-left:0;}
+  .lp-nav__cta{margin-left:auto;}
 }
 @media (max-width:560px){
   .lp-hide-sm{display:none;}
