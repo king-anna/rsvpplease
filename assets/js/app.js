@@ -72,6 +72,95 @@
 
   const val = (id) => (document.getElementById(id)?.value || "").trim();
 
+  /* ===================================================================== */
+  /*  LANDING (marketing — shown at the root for signed-out visitors)      */
+  /* ===================================================================== */
+  function feat(ic, title, body) {
+    return `<div class="lp-feature"><div class="fi">${icon(ic)}</div>
+      <div><h3>${esc(title)}</h3><p>${esc(body)}</p></div></div>`;
+  }
+
+  function viewLanding() {
+    const sample = window.Api.render(window.Api.DEFAULT_TEMPLATES.invite, {
+      guest: { name: "Alex", token: "demo" },
+      event: { name: "Mara & Theo's Garden Party", date: "2026-07-18T17:30", location: "Brooklyn" },
+      host: { name: "Mara" },
+    });
+    app.innerHTML = `
+      <div class="lp">
+        <nav class="lp-nav"><div class="container">
+          <a href="#/" class="wordmark" style="text-decoration:none">RSVP<b>please</b><span class="dot">.</span></a>
+          <span class="spacer"></span>
+          <button class="btn ghost" data-signin>Sign in</button>
+          <button class="btn primary" data-start>Get started</button>
+        </div></nav>
+
+        <header class="lp-hero"><div class="container">
+          <span class="eyebrow">SMS &amp; email RSVPs</span>
+          <h1 class="lp-title">The RSVPs <span class="accent">chase themselves.</span></h1>
+          <p class="lp-sub">Send each guest a personal RSVP link by text or email, watch confirmations
+            roll in, and let RSVPplease automatically nudge whoever hasn't replied.</p>
+          <div class="lp-cta-row">
+            <button class="btn primary lg" data-start>${icon("heart")} Start planning</button>
+            <button class="btn lg" data-signin>I have an account</button>
+          </div>
+          <p class="lp-trust">No subscription · $10 for up to 10 guests · pay only when you send</p>
+          <div class="lp-hero-art">
+            <div class="phone"><div class="notch"></div><div class="screen">
+              <div class="bar">RSVPplease</div>
+              <div class="bubble out">${esc(sample)}<div class="meta">Sent · just now</div></div>
+              <div class="bubble">YES 🎉<div class="meta">Received</div></div>
+              <div class="bubble out">Yay! So happy you'll be joining. See you there! 💕<div class="meta">Auto-reply</div></div>
+            </div></div>
+          </div>
+        </div></header>
+
+        <section class="lp-section tint"><div class="container">
+          <div class="lp-head"><h2>How it works</h2><p>Three steps from guest list to a full count.</p></div>
+          <div class="lp-steps">
+            <div class="lp-step"><div class="num">1</div><h3>Add your guests</h3>
+              <p>Name + mobile or email. Paste a whole list at once — phones and emails sort themselves.</p></div>
+            <div class="lp-step"><div class="num">2</div><h3>We send the invites</h3>
+              <p>Each guest gets a unique RSVP link by text and/or email, in your words. Pay $10 and they're off.</p></div>
+            <div class="lp-step"><div class="num">3</div><h3>Replies + auto-nudges</h3>
+              <p>Track confirmed / declined live. Anyone who goes quiet gets a gentle follow-up, automatically.</p></div>
+          </div>
+        </div></section>
+
+        <section class="lp-section"><div class="container">
+          <div class="lp-head"><h2>Everything an invite needs</h2></div>
+          <div class="lp-features">
+            ${feat("chat", "Two-way texting", "Guests reply YES/NO in the thread — we update the count and auto-respond.")}
+            ${feat("inbox", "Email too", "Prefer email? Invite, nudge and confirm over email — chosen per guest.")}
+            ${feat("bell", "Auto follow-up", "Set it once: nudge non-responders after N hours, up to your limit. No chasing.")}
+            ${feat("sliders", "Your words", "Customise the invite, nudge and yes/no replies, with a live preview as you type.")}
+          </div>
+        </div></section>
+
+        <section class="lp-section tint"><div class="container">
+          <div class="lp-head"><h2>Simple pricing</h2><p>Pay per event, only when you send. No subscription.</p></div>
+          <div class="lp-price-card ticket">
+            <div class="lp-price-amt">$10<small> / event</small></div>
+            <p class="muted mt-8">covers up to 10 guests</p>
+            <ul>
+              <li><span class="ck">${icon("check")}</span> Up to 10 guests included</li>
+              <li><span class="ck">${icon("check")}</span> +$1 per extra guest</li>
+              <li><span class="ck">${icon("check")}</span> SMS &amp; email invites</li>
+              <li><span class="ck">${icon("check")}</span> Auto-nudges &amp; two-way replies</li>
+            </ul>
+            <button class="btn primary block lg" data-start>Get started</button>
+          </div>
+        </div></section>
+
+        <footer class="lp-foot"><div class="container">
+          <a href="#/" class="wordmark" style="text-decoration:none;font-size:1rem">RSVP<b>please</b><span class="dot">.</span></a>
+          <p class="mt-16">Invitations that chase the replies for you.</p>
+        </div></footer>
+      </div>`;
+    app.querySelectorAll("[data-start],[data-signin]").forEach((b) =>
+      b.addEventListener("click", () => go("#/signin")));
+  }
+
   function showCheckEmail(email) {
     app.innerHTML = `
       <div class="auth-wrap"><div class="card auth-card ticket text-c reveal">
@@ -90,7 +179,7 @@
       <div class="auth-wrap">
         <div class="card auth-card ticket reveal">
           <div class="text-c mb-24">
-            <div class="wordmark" style="font-size:2rem">RSVP<b>please</b><span class="dot">.</span></div>
+            <a href="#/" class="wordmark" style="font-size:2rem;text-decoration:none">RSVP<b>please</b><span class="dot">.</span></a>
             <p class="muted mt-8">Invitations that chase the replies for you.</p>
           </div>
           <div class="field mb-16"><span class="label">Your name</span>
@@ -620,7 +709,10 @@
   /* ===================================================================== */
   async function render() {
     host = await window.Api.getHost();
-    if (!host) return viewAuth();
+    if (!host) {
+      const r0 = (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
+      return (r0 === "signin" || r0 === "login") ? viewAuth() : viewLanding();
+    }
 
     const parts = (location.hash.replace(/^#\/?/, "") || "events").split("/");
     const [root, a, b] = parts;
