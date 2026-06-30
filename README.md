@@ -5,11 +5,14 @@ mobile number, send each a unique RSVP link **by SMS**, track who's confirmed, a
 RSVPplease **auto-follow-up** with anyone who hasn't replied — all in a soft, light-pink
 stationery aesthetic.
 
-- **Two-way SMS** — send invites and nudges, receive YES/NO replies, auto-respond.
+- **Two-way SMS + email** — invite each guest by **text, email, or both**; receive YES/NO
+  replies, auto-respond, and auto-nudge non-responders.
 - **Customisable messages** — invitation, follow-up nudge, "yes" auto-reply, "no" auto-reply.
+- **Host notifications & receipts** — email on every RSVP, plus a Stripe payment receipt.
 - **Pricing** — **$10 base + $1 per guest** invited (Stripe Checkout).
 - **Stack** — static SPA (vanilla HTML/CSS/JS) + Supabase (Postgres, Auth, Edge Functions)
-  + Twilio (SMS) + Stripe (payments), hosted on GitHub Pages.
+  + Twilio (SMS) + Resend (email) + Stripe (payments), hosted on **Cloudflare Pages**
+  at **rsvpplease.app**.
 
 > **Design note:** the original design link
 > (`api.anthropic.com/v1/design/h/-5jGyvbtAES1HzoGCHPQMw`, `ui_kits/app/index.html`)
@@ -18,12 +21,18 @@ stationery aesthetic.
 
 ---
 
-## Status: Phase 1 — front end ✅
+## Status
 
-The front end is complete and runs **entirely in the browser** against a `localStorage`
-store, so it's a real, working app using **your own data — no dummy/seed records**. Every
-view talks to the app only through `assets/js/api.js` (the data-layer seam), so swapping in
-Supabase in Phase 2 doesn't touch any view code.
+- **Phase 1 — front end ✅** Complete; runs entirely in the browser on a `localStorage` store
+  (`BACKEND: "local"`), real data, no dummy/seed records.
+- **Phase 2 — backend 🛠️ code complete, deploy pending.** Supabase schema + RLS + RPCs
+  (`supabase/migrations/`), six Edge Functions (`supabase/functions/`), and the Supabase-backed
+  data layer (`assets/js/api.supabase.js`) are written. To go live, follow
+  **[`supabase/DEPLOY.md`](supabase/DEPLOY.md)** then flip `BACKEND` to `"supabase"` in
+  `assets/js/config.js`.
+
+Every view talks to the app only through `assets/js/api.js` (the data-layer seam), so the
+Supabase swap doesn't touch any view code.
 
 ### Run it locally
 

@@ -172,6 +172,8 @@
           id, eventId,
           name: (item.name || "").trim(),
           phone: (item.phone || "").trim(),
+          email: (item.email || "").trim(),
+          channel: item.channel || ((item.email && !item.phone) ? "email" : "sms"),
           partySize: Number(item.partySize) || 1,
           status: "pending",
           token: window.Store.uid("t") + window.Store.uid(""),

@@ -1,0 +1,16 @@
+# Supabase project config. Replace project_id with your ref after `supabase link`.
+project_id = "ehhitnddiudoxgzoxpys"
+
+# Public webhooks / cron do their OWN auth (signature or secret), so they must
+# NOT require a Supabase JWT. The host-called functions keep verify_jwt = true.
+[functions.twilio-inbound]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.send-nudges]
+verify_jwt = false
+
+[functions.notify-host]
+verify_jwt = false

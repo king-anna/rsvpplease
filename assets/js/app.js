@@ -72,6 +72,16 @@
 
   const val = (id) => (document.getElementById(id)?.value || "").trim();
 
+  function showCheckEmail(email) {
+    app.innerHTML = `
+      <div class="auth-wrap"><div class="card auth-card ticket text-c reveal">
+        <div style="width:60px;margin:4px auto 14px;color:var(--rose)">${icon("inbox", "")}</div>
+        <h2>Check your inbox</h2>
+        <p class="muted mt-8">We sent a magic sign-in link to <b>${esc(email)}</b>.
+          Open it on this device and you'll land right back here.</p>
+      </div></div>`;
+  }
+
   /* ===================================================================== */
   /*  AUTH                                                                  */
   /* ===================================================================== */
@@ -94,8 +104,12 @@
     const submit = async () => {
       const name = val("au-name"), email = val("au-email");
       if (!name) return toast("Add your name to continue", "err");
-      host = await window.Api.signIn({ name, email });
-      go("#/events"); render();
+      if (window.Api.isBackendLive() && !email) return toast("Add your email — we'll send a magic link", "err");
+      try {
+        const res = await window.Api.signIn({ name, email });
+        if (res && res.pending) return showCheckEmail(res.email);
+        host = res; go("#/events"); render();
+      } catch (e) { toast(e.message || "Sign-in failed", "err"); }
     };
     document.getElementById("au-go").addEventListener("click", submit);
     app.querySelectorAll("input").forEach((i) =>
@@ -314,11 +328,18 @@
     });
   }
 
+  function channelChip(ch) {
+    const label = ch === "email" ? "Email" : ch === "both" ? "Text + Email" : "Text";
+    return `<span class="pill" style="font-size:.64rem;padding:2px 8px">${label}</span>`;
+  }
+
   function guestTable(guests) {
-    const rows = guests.map((g) => `
+    const rows = guests.map((g) => {
+      const contact = [g.phone, g.email].filter(Boolean).join(" · ") || "no contact";
+      return `
       <tr data-guest="${g.id}" data-token="${esc(g.token)}">
         <td><div class="name">${esc(g.name || "—")}</div>
-          <div class="tel">${esc(g.phone || "no number")}</div></td>
+          <div class="tel">${esc(contact)} ${channelChip(g.channel)}</div></td>
         <td class="tabular">${g.partySize > 1 ? g.partySize + " ppl" : "1"}</td>
         <td>${statusPill(g.status)}</td>
         <td class="muted" style="font-size:.82rem">${g.respondedAt ? "replied " + relTime(g.respondedAt) : g.invitedAt ? "invited " + relTime(g.invitedAt) : "not invited"}</td>
@@ -330,7 +351,8 @@
             <button class="btn ghost sm" data-rm title="Remove">${icon("trash")}</button>
           </div>
         </td>
-      </tr>`).join("");
+      </tr>`;
+    }).join("");
     return `<table class="table"><thead><tr>
       <th>Guest</th><th>Party</th><th>Status</th><th>Activity</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`;
@@ -341,17 +363,25 @@
     const body = el(`<div>
       <div class="field mb-16">
         <span class="label">Add one guest</span>
-        <div class="field-row" style="grid-template-columns:1.4fr 1.4fr .8fr">
-          <input class="input" id="g-name" placeholder="Full name">
+        <input class="input" id="g-name" placeholder="Full name" style="margin-bottom:8px">
+        <div class="field-row" style="grid-template-columns:1fr 1fr">
           <input class="input" id="g-phone" type="tel" placeholder="+1 555 123 4567">
-          <input class="input" id="g-party" type="number" min="1" value="1" title="Party size">
+          <input class="input" id="g-email" type="email" placeholder="guest@email.com">
+        </div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr;margin-top:8px">
+          <select class="input" id="g-channel" title="How to invite">
+            <option value="sms">Invite by text</option>
+            <option value="email">Invite by email</option>
+            <option value="both">Text + email</option>
+          </select>
+          <input class="input" id="g-party" type="number" min="1" value="1" title="Party size" placeholder="Party size">
         </div>
       </div>
       <div class="field">
-        <span class="label">…or paste a list <span class="faint">(one per line: Name, +phone)</span></span>
-        <textarea class="textarea" id="g-bulk" placeholder="Sam Rivera, +15551230001&#10;Jo Lee, +15551230002"></textarea>
+        <span class="label">…or paste a list <span class="faint">(one per line: Name, +phone and/or email)</span></span>
+        <textarea class="textarea" id="g-bulk" placeholder="Sam Rivera, +15551230001&#10;Jo Lee, jo@email.com&#10;Priya Anand, +15551230003, priya@email.com"></textarea>
       </div>
-      <p class="help mt-8">Use international format (+countrycode) so SMS delivers reliably in Phase 2.</p>
+      <p class="help mt-8">Phones in international format (+countrycode). Channel sets how each guest is invited — pasted rows auto-detect phone vs email.</p>
     </div>`);
     modal({
       title: "Add guests",
@@ -361,12 +391,14 @@
         { label: "Add guests", cls: "primary", onClick: async (c) => {
           const list = [];
           const name = val("g-name");
-          if (name) list.push({ name, phone: val("g-phone"), partySize: Number(val("g-party")) || 1 });
+          if (name) list.push({ name, phone: val("g-phone"), email: val("g-email"), channel: val("g-channel"), partySize: Number(val("g-party")) || 1 });
           val("g-bulk").split("\n").map((l) => l.trim()).filter(Boolean).forEach((line) => {
             const parts = line.split(/[,\t;]+/).map((s) => s.trim());
+            const email = parts.find((p) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p)) || "";
             const phone = parts.find((p) => /\+?\d[\d\s().-]{5,}/.test(p)) || "";
-            const nm = parts.filter((p) => p !== phone).join(" ");
-            list.push({ name: nm, phone, partySize: 1 });
+            const nm = parts.filter((p) => p !== phone && p !== email).join(" ");
+            const channel = phone && email ? "both" : email ? "email" : "sms";
+            list.push({ name: nm, phone, email, channel, partySize: 1 });
           });
           if (!list.length) return toast("Add at least one guest", "err");
           await window.Api.addGuests(eventId, list);
@@ -605,6 +637,7 @@
     }
   }
 
+  window.__rsvpRender = render; // api.supabase.js calls this on auth-state change
   window.addEventListener("hashchange", render);
   window.addEventListener("DOMContentLoaded", render);
   if (document.readyState !== "loading") render();

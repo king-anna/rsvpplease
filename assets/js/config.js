@@ -5,20 +5,24 @@
    localStorage-backed store, so the app is fully usable with the host's own
    real data and NO seeded/dummy records.
 
-   Phase 2 wiring: drop in the Supabase project URL + anon key below and flip
-   BACKEND to "supabase". The anon key is safe to expose publicly (it is gated
-   by Row Level Security). All real secrets — Twilio Auth Token, Stripe secret
-   key, webhook signing secrets — live ONLY in Supabase Edge Function secrets
-   and are never shipped to the browser or committed to git.
+   The anon key below is safe to expose publicly (gated by Row Level Security)
+   and fine to commit. All real secrets — Twilio Auth Token, Stripe secret key,
+   Resend key, webhook signing secrets — live ONLY in Supabase Edge Function
+   secrets and are never shipped to the browser or committed to git.
+
+   ACTIVATION: the project URL + anon key are wired. Flip BACKEND to "supabase"
+   to go live — but ONLY after the schema migration (supabase/migrations/
+   0001_init.sql) has been run on the project, or the app will error on load.
    ========================================================================= */
 window.RSVP_CONFIG = {
-  // "local"  -> localStorage store (Phase 1)
-  // "supabase" -> Supabase client + Edge Functions (Phase 2)
+  // "local"  -> localStorage store (works today, your own data)
+  // "supabase" -> Supabase (Postgres + Auth + Edge Functions). Flip AFTER the
+  //               migration has been run on project ehhitnddiudoxgzoxpys.
   BACKEND: "local",
 
-  // Filled in Phase 2:
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://ehhitnddiudoxgzoxpys.supabase.co",
+  SUPABASE_ANON_KEY:
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaGl0bmRkaXVkb3hnem94cHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzODAwNjMsImV4cCI6MjA5Nzk1NjA2M30.abAdZ8fJLIGyIHuLh4oaXq1SA-eIkXZL7kowTKal8ig",
 
   // Pricing (cents). $10 base + $1 per invited guest.
   PRICE_BASE_CENTS: 1000,
