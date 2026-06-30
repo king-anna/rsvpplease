@@ -19,6 +19,10 @@
   --pink-400: #f7a8bd;
   --pink-500: #ef7d9d;
 
+  /* Brand — logo bubble (matches the RSVPplease wordmark + app icon) */
+  --brand:      #ec6a92;
+  --brand-soft: #fbd0dc;
+
   /* Raspberry — primary action / ink accent */
   --rose:       #d6336c;
   --rose-deep:  #b81e58;
@@ -124,17 +128,28 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 
 /* ---- Wordmark --------------------------------------------------------- */
 .wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.4rem;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.2rem;
   letter-spacing: -.02em;
   display: inline-flex;
   align-items: baseline;
-  gap: .04em;
-  color: var(--ink);
+  color: #fff;
+  background: var(--brand);
+  padding: .34em .58em .4em;
+  border-radius: .68em;
+  position: relative;
+  line-height: 1;
 }
-.wordmark b { color: var(--rose); font-weight: 600; }
-.wordmark .dot { color: var(--rose); }
+.wordmark b { color: var(--brand-soft); font-weight: 800; }
+.wordmark .dot { display: none; }
+.wordmark::after { /* speech-bubble tail */
+  content: "";
+  position: absolute; left: .8em; bottom: -.3em;
+  border: .32em solid transparent;
+  border-top-color: var(--brand);
+  border-bottom: 0; border-right: 0;
+}
 
 /* ---- Layout primitives ------------------------------------------------ */
 .shell { min-height: 100vh; display: flex; flex-direction: column; }

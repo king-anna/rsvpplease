@@ -1,0 +1,15 @@
+{
+  "name": "RSVPplease",
+  "short_name": "RSVPplease",
+  "description": "Invitations that chase the replies for you — send RSVP links by SMS & email, track confirmations, auto-nudge non-responders.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff6f4",
+  "theme_color": "#ec6a92",
+  "icons": [
+    { "src": "/assets/img/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/assets/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
