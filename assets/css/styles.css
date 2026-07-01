@@ -652,9 +652,18 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   .lp-nav__links{order:3;width:100%;justify-content:center;gap:8px 18px;font-size:14px;flex-wrap:wrap;margin-left:0;}
   .lp-nav__cta{margin-left:auto;}
 }
+@media (max-width:600px){
+  /* Hero art: stop the invite / SMS / chip cards overlapping — stack them. */
+  .lp-art{height:auto;position:static;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:8px;}
+  .lp-invite,.lp-sms{position:static;top:auto;left:auto;right:auto;width:100%;max-width:340px;}
+  .lp-chip{position:static;align-self:center;}
+  .lp-invite,.lp-sms,.lp-chip{animation:none;}
+}
 @media (max-width:560px){
   .lp-hide-sm{display:none;}
   .lp-band__stats{gap:20px;}
+  /* Nav links: keep all five on-screen without clipping. */
+  .lp-nav__links{gap:6px 14px;font-size:13.5px;}
 }
 
 /* ---- Utilities -------------------------------------------------------- */
