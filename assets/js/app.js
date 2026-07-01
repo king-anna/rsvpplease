@@ -37,7 +37,7 @@
           </a>
           <span class="pill rose" title="Phase 1 — front-end preview using your own local data">front-end preview</span>
           <nav class="nav">
-            ${a("events", "Events", "calendar")}
+            ${a("events", "Parties", "calendar")}
             ${a("inbox", "Activity", "inbox")}
             ${host && host.role === "admin" ? a("admin", "Admin", "users") : ""}
           </nav>
@@ -75,23 +75,24 @@
 
   /* ---- Per-page SEO meta (title <60 chars, description <160) ----------- */
   const META = {
-    "":        ["RSVPplease — RSVP invitations by text & email", "Send RSVP links by SMS or email, track who's coming, and auto-nudge the no-shows. $10 per event — no subscription."],
-    how:       ["How RSVPplease works — SMS & email RSVPs", "Add guests, send invites by text or email, and let RSVPplease auto-nudge non-responders until your headcount is locked in."],
+    "":        ["RSVPplease — RSVP invitations by text & email", "Share a free RSVP link with every guest, or pay $10 to let RSVPplease text them and auto-nudge the no-shows. Track who's coming in real time."],
+    how:       ["How RSVPplease works — SMS & email RSVPs", "Add guests, share their RSVP links free — or pay $10 to send by SMS and let RSVPplease auto-nudge non-responders until your headcount's locked in."],
     templates: ["Message templates — RSVPplease", "Customise your invite, nudge and yes/no auto-replies for SMS and email, with a live phone preview as you type."],
-    pricing:   ["Pricing — RSVPplease", "$10 per event covers up to 10 guests, then $1 each. No subscription — pay only when you send your invitations."],
+    pricing:   ["Pricing — RSVPplease", "Share RSVP links free, forever. Or let RSVPplease text every guest for $10 per event — up to 10 guests, then $1 each. No subscription."],
     stories:   ["Why RSVPplease works", "Two-way SMS, automatic nudges and a real headcount for your next event — see why guests actually reply."],
+    about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old who was tired of watching her mum chase everyone for a simple yes or no. Meet Eva."],
     signin:    ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
     login:     ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
-    events:    ["Your events — RSVPplease", "Manage your events, guests and RSVPs — and let RSVPplease chase the replies for you."],
+    events:    ["Your parties — RSVPplease", "Manage all your parties, guests and RSVPs — share links free, or activate SMS to chase the replies for you."],
     inbox:     ["Activity — RSVPplease", "Every outgoing invite and every reply, in one two-way SMS and email feed."],
     admin:     ["Admin — RSVPplease", "Manage users, comped access and revenue across RSVPplease."],
-    new:       ["New event — RSVPplease", "Create an event and start collecting RSVPs by text and email."],
-    event:     ["Event — RSVPplease", "Track who's confirmed and send invites and nudges by SMS and email."],
+    new:       ["New party — RSVPplease", "Create a party and start collecting RSVPs — free by link, or activate SMS."],
+    event:     ["Party — RSVPplease", "Track who's confirmed, share RSVP links free, or activate SMS nudges."],
   };
   function setMeta(key) {
     const m = META[key] || META[""];
     document.title = m[0];
-    const ogImgs = { how: "og-how", templates: "og-templates", pricing: "og-pricing", stories: "og-stories" };
+    const ogImgs = { how: "og-how", templates: "og-templates", pricing: "og-pricing", stories: "og-stories", about: "og-about" };
     const img = "https://rsvpplease.app/assets/img/" + (ogImgs[key] || "og") + ".png";
     const set = (sel, v) => { const el = document.head.querySelector(sel); if (el) el.setAttribute("content", v); };
     set('meta[name="description"]', m[1]);
@@ -121,6 +122,10 @@
       bell: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
       users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
       plus: "M12 5v14M5 12h14",
+      heart: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z",
+      pen: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z",
+      cake: "M4 21h16M4 21v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8M3 13c1 0 1 1 2.2 1s1.3-1 2.3-1 1.2 1 2.2 1 1.3-1 2.3-1 1.2 1 2.2 1 1.3-1 2.3-1M12 8V4M12 4l-1.2-1.2M12 4l1.2-1.2",
+      link: "M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5",
     };
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${D[name] || D.check}"/></svg>`;
@@ -150,7 +155,7 @@
   }
 
   function lpNav(active) {
-    const links = [["How it works", "/how.html", "how"], ["Templates", "/templates.html", "templates"], ["Pricing", "/pricing.html", "pricing"], ["Stories", "/stories.html", "stories"]];
+    const links = [["How it works", "/how.html", "how"], ["Templates", "/templates.html", "templates"], ["Pricing", "/pricing.html", "pricing"], ["Stories", "/stories.html", "stories"], ["About", "/about.html", "about"]];
     return `<nav class="lp-nav"><div class="lp-container lp-nav__inner">
       ${lpLogo}
       <div class="lp-nav__links">
@@ -168,7 +173,7 @@
       <div class="lp-footer__grid">
         <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
         ${col("Product", [["How it works", "/how.html"], ["Pricing", "/pricing.html"], ["Templates", "/templates.html"]])}
-        ${col("Company", [["Stories", "/stories.html"]])}
+        ${col("Company", [["About", "/about.html"], ["Stories", "/stories.html"]])}
         ${col("Get started", [["Sign in", "/#/signin"]])}
       </div>
       <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
@@ -216,16 +221,17 @@
     lpShell("", `
       <header class="lp-hero"><div class="lp-container lp-hero__grid">
         <div class="lp-hero__copy lp-reveal">
-          <span class="lp-eyebrow">${lpIcon("spark", 15)} No more “did you get my text?”</span>
+          <span class="lp-eyebrow">${lpIcon("spark", 15)} Free to start · no card, no catch</span>
           <h1 class="lp-h1">Invitations your guests <span class="lp-underline">actually reply to</span>.</h1>
-          <p class="lp-lede">Send each guest a personal RSVP link by text or email, then let RSVPplease nudge the no-shows by SMS — so you always have a real headcount.</p>
+          <p class="lp-lede">Create an invite and share a unique RSVP link with every guest — <b>free</b>. Guests tap to say if they're coming or not. Want a real headcount? Switch on SMS and RSVPplease nudges the no-shows until everyone replies.</p>
           <div class="lp-hero__cta">
-            <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite ${lpIcon("arrow", 18)}</button>
+            <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite — free ${lpIcon("arrow", 18)}</button>
             <a class="lp-btn lp-btn--outline lp-btn--lg" href="/how.html">See how it works</a>
           </div>
+          <p class="lp-freeline">${lpIcon("check", 15)} Free to create &amp; share by link · SMS nudges from $10 a party — no subscription</p>
           <div class="lp-trust">
             ${lpAvatars(["Maya", "Sam", "Lena", "Ben", "Ada"], 34)}
-            <span>Send by <b>text or email</b> · pay only when you send</span>
+            <span>Loved by hosts who just want a <b>full table</b></span>
           </div>
         </div>
         ${lpHeroArt()}
@@ -246,8 +252,8 @@
       <section class="lp-section lp-section--tight"><div class="lp-container">
         <div class="lp-steps">
           ${lpStep("1", "Add your guests", "Name + mobile or email. Paste a whole list at once — phones and emails sort themselves.")}
-          ${lpStep("2", "Pay & send", "$10 covers up to 10 guests ($1 each beyond). Every guest gets a unique RSVP link.")}
-          ${lpStep("3", "We auto-nudge", "Anyone who goes quiet gets a gentle SMS follow-up until your headcount is locked.")}
+          ${lpStep("2", "Share free, or send by SMS", "Copy each guest's RSVP link and share it yourself for free — or pay $10 (up to 10 guests, then $1 each) and we'll text everyone.")}
+          ${lpStep("3", "We auto-nudge", "On the SMS plan, anyone who goes quiet gets a gentle follow-up text until your headcount is locked.")}
         </div>
       </div></section>
 
@@ -273,7 +279,7 @@
       <section class="lp-section"><div class="lp-container">
         <div class="lp-final lp-reveal">
           <h2 class="lp-h2">Your next party is one invite away.</h2>
-          <p class="lp-final__sub">$10 per event, up to 10 guests — then $1 each. No subscription; pay only when you send.</p>
+          <p class="lp-final__sub">Free to start — no card, no catch. Share by link for nothing, or add SMS nudges from $10 a party.</p>
           <div class="lp-hero__cta lp-hero__cta--center">
             <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button>
           </div>
@@ -314,11 +320,11 @@
       <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
         <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} How it works</span>
         <h1 class="lp-h1">From guest list to a <span class="lp-underline">real headcount</span>.</h1>
-        <p class="mk-phero__lede">Three steps — add your guests, send the invites, and let RSVPplease chase the no-shows by text. No app for anyone to install.</p>
+        <p class="mk-phero__lede">Three steps — add your guests, share their RSVP links free (or send by SMS), and let RSVPplease chase the no-shows by text. No app for anyone to install.</p>
       </div></header>
       <section class="lp-section" style="padding-top:12px"><div class="lp-container"><div class="mk-walk">
         ${mkWStep("1", "sliders", "Add your guests & make it yours", "Add guests by name and mobile or email — or paste your whole list and we sort phones from emails. Then write the invite, nudge and replies in your own words, with a live preview.", ["Bulk paste a guest list in seconds", "Customise all four messages (SMS + email)", "Choose each guest's channel: text, email, or both"], canvas)}
-        ${mkWStep("2", "send", "Pay once, send everywhere", "Pay $10 for up to 10 guests (then $1 each) and every guest gets a unique RSVP link by text and/or email. They tap to reply — or just text YES/NO back.", ["Stripe checkout — no subscription", "Unique, trackable link per guest", "Guests need no app and no account"], phone1)}
+        ${mkWStep("2", "send", "Share the links free — or send by SMS", "Copy each guest's unique RSVP link and share it yourself for free — group chat, WhatsApp, wherever. Or pay $10 (up to 10 guests, then $1 each) and RSVPplease texts every guest for you. Either way they tap to reply, or text YES/NO back.", ["Free: copy & share links anywhere", "$10 SMS: we text every guest for you", "Unique, trackable link per guest"], phone1)}
         ${mkWStep("3", "bell", "We auto-nudge the no-shows", "Set it once and RSVPplease follows up with anyone who hasn't replied — by SMS, in your event's voice — then logs the answer to your guest list automatically.", ["Nudge after N hours, up to your limit", "Two-way replies sync instantly", "Watch the “going” count climb"], phone2)}
       </div></div></section>
       <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
@@ -330,25 +336,52 @@
 
   /* ---- Pricing ($10 + $1/guest) with a live guest-count calculator ----- */
   function viewPricing() {
-    const inc = [
-      "SMS & email invitations", "Automatic SMS nudges & reminders",
-      "Two-way replies, logged to your list", "Customisable invite, nudge & replies",
-      "Real-time RSVP tracking", "Live guest list & party counts",
-      "A unique RSVP link per guest", "No app or account for your guests",
+    const freeFeats = [
+      "A unique RSVP link for every guest", "One-tap Yes / No confirm page",
+      "Real-time RSVP tracking & counts", "Customisable event details & note",
+      "Share by WhatsApp, email, anywhere", "No app or account for your guests",
     ];
+    const smsFeats = [
+      "Everything in Free, plus…", "We text each guest their RSVP link",
+      "Automatic SMS nudges for no-shows", "Two-way YES/NO replies, auto-logged",
+      "Customisable invite, nudge & replies", "Email invitations too, per guest",
+    ];
+    const tier = (opts) => `
+      <div class="mk-tier${opts.featured ? " mk-tier--featured" : ""} lp-reveal">
+        ${opts.badge ? `<span class="mk-tier__badge">${esc(opts.badge)}</span>` : ""}
+        <span class="mk-tier__name">${esc(opts.name)}</span>
+        <div class="mk-tier__price">${opts.price}</div>
+        <div class="mk-tier__sub">${esc(opts.sub)}</div>
+        <ul class="mk-tier__feats">
+          ${opts.feats.map((f) => `<li><span class="mk-inc__ic">${lpIcon("check", 14)}</span>${esc(f)}</li>`).join("")}
+        </ul>
+        <button class="lp-btn ${opts.featured ? "lp-btn--primary" : "lp-btn--outline"} lp-btn--lg" data-start style="width:100%;margin-top:auto">${esc(opts.cta)} ${lpIcon("arrow", 17)}</button>
+      </div>`;
     lpShell("pricing", `
       <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
-        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} One simple price</span>
-        <h1 class="lp-h1">$10 a party. Then just <span class="lp-underline">$1 a guest</span>.</h1>
-        <p class="mk-phero__lede">No tiers, no subscriptions. Every event is $10 flat for up to 10 guests — and a single dollar for each guest after that. Every feature included, every time.</p>
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Simple pricing</span>
+        <h1 class="lp-h1">Free to share. <span class="lp-underline">$10 to text</span>.</h1>
+        <p class="mk-phero__lede">Share a personal RSVP link with every guest for free — forever. When you'd rather we do the chasing, let RSVPplease text everyone for a one-off $10 (up to 10 guests, then $1 each).</p>
       </div></header>
 
-      <section class="lp-section" style="padding-top:12px"><div class="lp-container">
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        <div class="mk-tiers">
+          ${tier({ name: "Free — Share links", price: `$0`, sub: "Send the links yourself", feats: freeFeats, cta: "Start for free", featured: false })}
+          ${tier({ name: "SMS — We text them", price: `$10<span class="mk-tier__per"> / event</span>`, sub: "Up to 10 guests, then $1 each", feats: smsFeats, cta: "Send by SMS", featured: true, badge: "Most popular" })}
+        </div>
+      </div></section>
+
+      <section class="lp-section lp-section--alt"><div class="lp-container">
+        <div class="lp-section__head lp-reveal">
+          <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("users", 15)} Estimate the SMS plan</span>
+          <h2 class="lp-h2">How big is the guest list?</h2>
+          <p class="lp-lede" style="text-align:center;margin:14px auto 0">The first 10 guests are covered by the $10 base — every guest after is just $1. Sharing links yourself is always free.</p>
+        </div>
         <div class="mk-calc lp-reveal">
           <div class="mk-calc__left">
-            <span class="lp-eyebrow">${lpIcon("users", 15)} Estimate your event</span>
-            <h2 class="lp-h2">How big is the guest list?</h2>
-            <p class="lp-lede" style="margin-top:14px">Drag to see exactly what you'd pay. The first 10 guests are covered by the $10 base — every guest after is just $1.</p>
+            <span class="lp-eyebrow">${lpIcon("chat", 15)} SMS plan</span>
+            <h2 class="lp-h2">Let us text everyone.</h2>
+            <p class="lp-lede" style="margin-top:14px">Drag to see exactly what a fully-sent, auto-nudged event costs. Pay once when you send — no subscription.</p>
             <div class="mk-calc__count"><strong id="calc-n">25</strong><span id="calc-nlbl">guests</span></div>
             <input class="mk-calc__range" id="calc-range" type="range" min="1" max="250" step="1" value="25" aria-label="Number of guests">
             <div class="mk-calc__scale"><span>1</span><span>250</span></div>
@@ -367,35 +400,25 @@
         </div>
       </div></section>
 
-      <section class="lp-section lp-section--alt"><div class="lp-container">
-        <div class="lp-section__head lp-reveal">
-          <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("check", 15)} Everything's in the box</span>
-          <h2 class="lp-h2">One price. The whole product.</h2>
-          <p class="lp-lede" style="text-align:center;margin:14px auto 0">No feature gates or upsells — every event gets all of it.</p>
-        </div>
-        <div class="mk-inc-grid lp-reveal">
-          ${inc.map((f) => `<div class="mk-inc"><span class="mk-inc__ic">${lpIcon("check", 15)}</span>${esc(f)}</div>`).join("")}
-        </div>
-      </div></section>
-
       <section class="lp-section"><div class="lp-container">
         <div class="lp-section__head lp-reveal">
           <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Pricing FAQ</span>
           <h2 class="lp-h2">No surprises on the bill.</h2>
         </div>
         <div class="mk-faq lp-reveal">
-          ${[["How exactly is the price worked out?", "Every event is $10 for the first 10 guests, then $1 for each guest beyond that. A 10-guest party is $10; a 40-guest party is $40. That's the whole formula."],
-             ["Is it per event or a subscription?", "Per event. You pay once when you send the invite — there's no monthly fee and nothing to cancel."],
-             ["Do SMS nudges cost extra?", "No. Automatic SMS nudges and reminders are included for every guest, at no additional charge."],
-             ["What if my guest count changes?", "You only pay for the guests you actually invite. Add more later and you're charged $1 each; if fewer come, there's nothing extra to pay."],
-             ["Do my guests ever pay?", "Never. Guests RSVP and receive nudges completely free, with no app or account."]]
+          ${[["What's actually free?", "Sharing is free, forever. Create your event, add guests, and copy each guest's unique RSVP link to send however you like — group chat, WhatsApp, email. You get real-time tracking with no charge and no card."],
+             ["What does the $10 SMS plan add?", "We do the sending and the chasing. RSVPplease texts each guest their link, auto-nudges anyone who goes quiet, and logs every YES/NO reply to your list automatically."],
+             ["How is the SMS price worked out?", "$10 covers the first 10 guests, then $1 for each guest beyond that. A 10-guest party is $10; a 40-guest party is $40. That's the whole formula."],
+             ["Is the SMS plan a subscription?", "No. It's per event — you pay once when you send. There's no monthly fee and nothing to cancel."],
+             ["What if I add guests after paying?", "You only ever pay $1 for each new guest beyond your first 10 — never a second base fee. Add a few more and we just charge the difference before texting them."],
+             ["Do my guests ever pay?", "Never. Guests confirm and receive nudges completely free, with no app or account — on either plan."]]
             .map(([q, a], i) => `<details class="mk-faq__item" ${i === 0 ? "open" : ""}><summary class="mk-faq__q">${esc(q)}<span class="mk-faq__plus">${lpIcon("plus", 15)}</span></summary><p class="mk-faq__a">${esc(a)}</p></details>`).join("")}
         </div>
       </div></section>
 
       <section class="lp-section lp-section--alt"><div class="lp-container"><div class="lp-final lp-reveal">
-        <h2 class="lp-h2">$10 and you're sending.</h2>
-        <p class="lp-final__sub">One price, every feature — just better RSVPs.</p>
+        <h2 class="lp-h2">Start free. Upgrade when you want the texts.</h2>
+        <p class="lp-final__sub">Share links for nothing — or $10 and we'll text every guest for you.</p>
         <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
       </div></div></section>`);
 
@@ -500,6 +523,86 @@
         <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
       </div></div></section>`);
   }
+  /* ---- About (founder story — Eva & her mum) --------------------------- */
+  function viewAbout() {
+    const problemSheet = `
+      <div class="mk-frame"><div class="mk-frame__body mk-sheet-wrap">
+        <div class="mk-sheet">
+          <div class="mk-sheet__top"><span></span><span></span><span></span><em>who's-coming.xlsx</em></div>
+          ${[["Aunt Jo", "yes"], ["The Parks", "q"], ["Sam (+ ?)", "q"], ["Grandpa", "yes"], ["Neighbours", "no"], ["Cousins ×4", "q"]]
+            .map(([n, s]) => `<div class="mk-sheet__row"><span class="mk-sheet__name">${esc(n)}</span><span class="mk-sheet__cell mk-sheet__cell--${s}">${s === "yes" ? "✓" : s === "no" ? "✕" : "?"}</span></div>`).join("")}
+          <div class="mk-sheet__total">Final count: <b>18?</b> <s>24?</s> 🤷</div>
+        </div>
+        <span class="mk-note">did the Parks<br>ever reply??</span>
+      </div></div>`;
+    const ideaPhone = `
+      <div class="mk-frame"><div class="mk-frame__body">
+        <div class="mk-phone"><div class="mk-phone__screen">
+          <div class="mk-phone__hd"><span class="mk-phone__dot"></span> RSVPPLEASE · AUTO-NUDGE</div>
+          <div class="mk-bub mk-bub--in">Hi! Maya's Sunday lunch is at 1. Can you make it? Reply YES / NO 💌</div>
+          <div class="mk-bub mk-bub--out">YES — see you then!</div>
+          <span class="mk-abt-count">${lpIcon("check", 13)} Headcount updated · 18 going</span>
+        </div></div>
+      </div></div>`;
+    lpShell("about", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("heart", 15)} Our story</span>
+        <h1 class="lp-h1">It started with a tired mum and a <span class="lp-underline">12-year-old</span> who'd had enough.</h1>
+        <p class="mk-phero__lede">Every family has the person who hosts. Eva's mum was that person — and she was worn out from chasing everyone for a simple yes or no. So Eva built the thing that would chase them for her. That's RSVPplease.</p>
+      </div></header>
+
+      <section class="lp-section"><div class="lp-container mk-abt">
+        <div class="mk-abt__row lp-reveal">
+          <div class="mk-abt__copy">
+            <span class="mk-abt__eyebrow">${lpIcon("users", 14)} The problem</span>
+            <h2 class="mk-abt__t">Nobody ever just… replied.</h2>
+            <p class="mk-abt__d">Eva watched her mum plan birthdays, dinners and the big family holidays the same way every time — a paper list, three group chats, and a running guess at how many people were actually coming.</p>
+            <ul class="mk-wlist">
+              <li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>Sticky notes that never matched the group chat</li>
+              <li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>"Maybe" that stayed "maybe" until the day of</li>
+              <li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>Cooking for twenty and seating twelve — or the other way round</li>
+            </ul>
+          </div>
+          <div class="mk-abt__media">${problemSheet}</div>
+        </div>
+        <div class="mk-abt__row lp-reveal">
+          <div class="mk-abt__copy">
+            <span class="mk-abt__eyebrow">${lpIcon("spark", 14)} The idea</span>
+            <h2 class="mk-abt__t">So she built the nudge.</h2>
+            <p class="mk-abt__d">Eva was already teaching herself to code at school. One weekend she sketched a simple idea: a digital invite that texts your guests for you and keeps the count on its own.</p>
+            <p class="mk-abt__d">Her mum was the very first user. For the first time, she knew her real headcount <em>before</em> the shopping trip — not after the party.</p>
+          </div>
+          <div class="mk-abt__media">${ideaPhone}</div>
+        </div>
+      </div></section>
+
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        <div class="mk-feature lp-reveal">
+          <div>
+            <span class="lp-eyebrow">${lpIcon("pen", 15)} From the founder</span>
+            <p class="mk-feature__quote">"I didn't set out to start a company. I just wanted my mum to stop stressing about who was coming. Turns out a lot of people's mums needed the same thing."</p>
+            <p class="mk-abt__sign">— Eva</p>
+            <div class="mk-feature__by">${lpAvatars(["Eva"], 48)}<div><div class="mk-feature__name">Eva</div><div class="mk-feature__event">Founder · still in school</div></div></div>
+          </div>
+          <div class="mk-abt__media"><img class="mk-abt__photo" src="/assets/img/eva.jpg" alt="Eva, the founder of RSVPplease" loading="lazy" width="675" height="900"></div>
+        </div>
+      </div></section>
+
+      <section class="lp-section lp-section--alt"><div class="lp-container">
+        <div class="mk-abt-note lp-reveal">
+          <span class="mk-abt-note__ic">${lpIcon("cake", 22)}</span>
+          <h2 class="mk-abt-note__t">Still built by a student.</h2>
+          <p class="mk-abt-note__d">RSVPplease is still run by Eva — building between classes, homework and the occasional family party. The exact kind of party RSVPplease was made for.</p>
+        </div>
+      </div></section>
+
+      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">Help your host relax.</h2>
+        <p class="lp-final__sub">Free to start. No card, no catch — just a full table.</p>
+        <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
+      </div></div></section>`);
+  }
+
   function showCheckEmail(email) {
     app.innerHTML = `
       <div class="auth-wrap"><div class="card auth-card ticket text-c reveal">
@@ -549,59 +652,155 @@
   /* ===================================================================== */
   async function viewEvents() {
     const events = await window.Api.listEvents();
+    const live = events.filter((e) => !e.archived);
+    const archived = events.filter((e) => e.archived);
+    const paidList = live.filter((e) => e.paidAt);
+    const freeList = live.filter((e) => !e.paidAt);
+    const totalCents = paidList.reduce((n, e) => n + window.Api.priceFor(e.counts.total).totalCents, 0);
+    const sub = `${esc(host && host.name ? host.name : "Your account")} · ${live.length} ${live.length === 1 ? "party" : "parties"} · ${paidList.length} on SMS${freeList.length ? ` · ${freeList.length} link-only` : ""}${archived.length ? ` · ${archived.length} archived` : ""}`;
+
     let body;
     if (!events.length) {
       body = `
         <div class="card flat empty reveal">
           <div class="art">${icon("calendar", "")}</div>
-          <h3>No events yet</h3>
-          <p>Create your first event, add guests, and let RSVPplease send the invites and chase the stragglers by text.</p>
-          <button class="btn primary lg" data-new>${icon("plus")} New event</button>
+          <h3>No parties yet</h3>
+          <p>Start your first party for free, add guests, and share each a unique RSVP link to confirm if they're coming — or activate SMS and let RSVPplease chase the no-repliers by text.</p>
+          <button class="btn primary lg" data-new>${icon("plus")} New party</button>
         </div>`;
     } else {
-      body = `<div class="event-grid">${events.map(eventCard).join("")}</div>`;
+      const summary = live.length ? `
+        <div class="bill-summary reveal">
+          <div class="bill-summary__total">
+            <span class="bill-summary__amt"><span class="cur">$</span>${Math.round(totalCents / 100)}</span>
+            <span class="bill-summary__lbl">across ${paidList.length} SMS ${paidList.length === 1 ? "party" : "parties"}${freeList.length ? `<br>${freeList.length} more shared free` : ""}</span>
+          </div>
+          <div class="bill-summary__note">${icon("info")}<span>Start for free — every guest gets a unique RSVP link to confirm if they're coming. You only pay when you activate SMS on a party ($10 up to 10 guests, then $1 each).</span></div>
+        </div>` : "";
+      const liveGrid = `<div class="party-grid">
+        ${live.map(partyCard).join("")}
+        <button class="new-party-card reveal" data-new>
+          <span class="new-party-card__ic">${icon("plus")}</span>
+          <span class="new-party-card__t">Start a new party</span>
+          <span class="new-party-card__d">Free — share by link</span>
+        </button>
+      </div>`;
+      const archivedSection = archived.length ? `
+        <div class="arch-section reveal">
+          <div class="arch-section__head">${icon("archive")} Archived · ${archived.length}</div>
+          <div class="party-grid">${archived.map(partyCard).join("")}</div>
+        </div>` : "";
+      body = `${summary}${liveGrid}${archivedSection}`;
     }
     mount("events", `
       <div class="page-head">
         <div>
           <div class="eyebrow">Dashboard</div>
-          <h1>Your events</h1>
+          <h1>Your parties</h1>
+          <p class="muted mt-8" style="font-size:.9rem">${sub}</p>
         </div>
-        <button class="btn primary" data-new>${icon("plus")} New event</button>
+        <button class="btn primary" data-new>${icon("plus")} New party</button>
       </div>
       ${body}`);
-    app.querySelectorAll("[data-new]").forEach((b) => b.addEventListener("click", () => go("#/new")));
-    app.querySelectorAll("[data-ev]").forEach((c) =>
-      c.addEventListener("click", () => go("#/event/" + c.dataset.ev)));
+    bindPartyGrid();
   }
 
-  function eventCard(ev) {
+  // Wire card navigation + the per-party kebab menu (archive / restore / delete).
+  function bindPartyGrid() {
+    app.querySelectorAll("[data-new]").forEach((b) => b.addEventListener("click", () => go("#/new")));
+    app.querySelectorAll(".party-card[data-ev]").forEach((card) => {
+      card.addEventListener("click", () => go("#/event/" + card.dataset.ev));
+      card.addEventListener("keydown", (e) => { if (e.key === "Enter") go("#/event/" + card.dataset.ev); });
+    });
+    const closeMenus = () => app.querySelectorAll(".party-menu.open").forEach((m) => m.classList.remove("open"));
+    app.querySelectorAll("[data-menu-btn]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const pop = btn.parentElement.querySelector(".party-menu");
+        const willOpen = !pop.classList.contains("open");
+        closeMenus();
+        if (willOpen) {
+          pop.classList.add("open");
+          setTimeout(() => document.addEventListener("click", function h() { closeMenus(); document.removeEventListener("click", h); }), 0);
+        }
+      });
+    });
+    app.querySelectorAll("[data-archive]").forEach((b) => b.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const archive = b.dataset.val === "1";
+      await window.Api.updateEvent(b.dataset.archive, { archived: archive });
+      toast(archive ? "Party archived" : "Party restored", "ok");
+      render();
+    }));
+    app.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      confirmDialog({
+        title: `Delete “${b.dataset.name}”?`,
+        message: "This permanently removes the party, its guest list and RSVPs — it can't be undone. To keep it around without paying, archive it instead.",
+        confirmLabel: "Delete party", danger: true,
+        onConfirm: async () => { await window.Api.deleteEvent(b.dataset.del); toast("Party deleted", "ok"); render(); },
+      });
+    }));
+  }
+
+  // Give each party a stable, on-brand gradient banner (no theme field in the data).
+  const PARTY_GRADS = [
+    ["#E58AA9", "#b81e58"], ["#3E5C89", "#243763"], ["#F0C277", "#B4820E"],
+    ["#5BA77C", "#356E4D"], ["#9B5DE5", "#6B3FA0"], ["#3E8FD6", "#245b8f"],
+  ];
+  function partyGradient(id) {
+    let h = 0; const s = String(id);
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    const [a, b] = PARTY_GRADS[h % PARTY_GRADS.length];
+    return `linear-gradient(135deg, ${a}, ${b})`;
+  }
+  function partyStatusPill(ev) {
+    if (ev.archived) return `<span class="status-pill archived"><span class="dot"></span>Archived</span>`;
+    return ev.paidAt
+      ? `<span class="status-pill active"><span class="dot"></span>SMS active</span>`
+      : `<span class="status-pill free"><span class="dot"></span>Link only</span>`;
+  }
+  function partyMenu(ev) {
+    return `
+      <div class="party-card__menu">
+        <button class="party-kebab" data-menu-btn aria-label="Party options">${icon("dots")}</button>
+        <div class="party-menu">
+          ${ev.archived
+            ? `<button data-archive="${ev.id}" data-val="0">${icon("archive")} Restore party</button>`
+            : `<button data-archive="${ev.id}" data-val="1">${icon("archive")} Archive</button>`}
+          <button class="danger" data-del="${ev.id}" data-name="${esc(ev.name)}">${icon("trash")} Delete</button>
+        </div>
+      </div>`;
+  }
+  function partyCard(ev) {
     const c = ev.counts;
-    const replied = c.confirmed + c.declined;
-    const pct = c.total ? Math.round((replied / c.total) * 100) : 0;
+    const paid = !!ev.paidAt;
     const okW = c.total ? (c.confirmed / c.total) * 100 : 0;
     const noW = c.total ? (c.declined / c.total) * 100 : 0;
-    const statusTag = ev.paidAt
-      ? `<span class="pill ok"><span class="dot"></span>Sending</span>`
-      : `<span class="pill"><span class="dot"></span>Draft</span>`;
+    const priceLabel = paid ? money(window.Api.priceFor(c.total).totalCents) : "Free";
+    const meta = [fmt(ev.date), ev.location ? esc(ev.location) : null].filter(Boolean).join(" · ");
     return `
-      <button class="event-card reveal" data-ev="${ev.id}">
-        <div class="row between" style="align-items:flex-start">
-          ${dateChip(ev.date)}
-          ${statusTag}
+      <div class="party-card reveal${ev.archived ? " archived" : ""}" data-ev="${ev.id}" role="button" tabindex="0" aria-label="Open ${esc(ev.name)}">
+        <div class="party-card__art${ev.archived ? " muted" : ""}" style="background:${partyGradient(ev.id)}">
+          <span class="party-card__status">${partyStatusPill(ev)}</span>
+          ${partyMenu(ev)}
+          <span class="party-card__kicker">You're invited!</span>
+          <span class="party-card__title">${esc(ev.name)}</span>
         </div>
-        <h3 class="mt-16">${esc(ev.name)}</h3>
-        <p class="muted" style="font-size:.88rem;min-height:1.2em">
-          ${ev.location ? icon("location") + " " + esc(ev.location) : "&nbsp;"}
-        </p>
-        <div class="mt-16">
+        <div class="party-card__body">
+          <div class="party-card__meta">${icon("calendar")} ${meta}</div>
+          <div class="party-card__stats">
+            <div><b>${c.confirmed}</b><span>going</span></div>
+            <div><b>${c.total}</b><span>guests</span></div>
+            <div><b>${c.pending}</b><span>awaiting</span></div>
+          </div>
           <div class="progress"><i class="ok" style="width:${okW}%"></i><i class="no" style="width:${noW}%"></i></div>
-          <div class="row between mt-8" style="font-size:.82rem">
-            <span class="muted tabular">${replied} of ${c.total} replied · ${pct}%</span>
-            <span class="pill ok" style="font-size:.7rem">${c.confirmed} yes</span>
+          <div class="party-card__foot">
+            <span class="party-card__reply">${c.total === 0 ? "No guests yet" : c.pending ? c.pending + " awaiting reply" : "All replied 🎉"}</span>
+            <span class="party-card__price ${paid ? "" : "free"}">${priceLabel}</span>
           </div>
         </div>
-      </button>`;
+      </div>`;
   }
 
   /* ===================================================================== */
@@ -611,13 +810,13 @@
     const ev = id ? await window.Api.getEvent(id) : null;
     const v = (k, d = "") => esc(ev ? (ev[k] ?? d) : d);
     mount("events", `
-      <button class="crumb" data-back>${icon("chevronLeft")} ${id ? "Back to event" : "All events"}</button>
+      <button class="crumb" data-back>${icon("chevronLeft")} ${id ? "Back to party" : "All parties"}</button>
       <div class="page-head"><div>
         <div class="eyebrow">${id ? "Edit" : "Create"}</div>
-        <h1>${id ? "Edit event" : "New event"}</h1>
+        <h1>${id ? "Edit party" : "New party"}</h1>
       </div></div>
       <div class="card reveal" style="max-width:680px">
-        <div class="field mb-16"><span class="label">Event name</span>
+        <div class="field mb-16"><span class="label">Party name</span>
           <input class="input" id="f-name" placeholder="Mara & Theo's Garden Party" value="${v("name")}"></div>
         <div class="field-row mb-16">
           <div class="field"><span class="label">Date &amp; time</span>
@@ -640,7 +839,7 @@
             </select></div>
         </div>
         <div class="row gap-12">
-          <button class="btn primary lg" id="f-save">${icon("check")} ${id ? "Save changes" : "Create event"}</button>
+          <button class="btn primary lg" id="f-save">${icon("check")} ${id ? "Save changes" : "Create party"}</button>
           <button class="btn ghost" data-back>Cancel</button>
         </div>
       </div>`);
@@ -652,9 +851,9 @@
         location: val("f-loc"), description: val("f-desc"),
         nudgeAfterHours: Number(val("f-nudgeh")), nudgeMax: Number(val("f-nudgem")),
       };
-      if (!data.name) return toast("Give your event a name", "err");
+      if (!data.name) return toast("Give your party a name", "err");
       if (id) { await window.Api.updateEvent(id, data); toast("Saved", "ok"); go("#/event/" + id); }
-      else { const created = await window.Api.createEvent(data); toast("Event created", "ok"); go("#/event/" + created.id); }
+      else { const created = await window.Api.createEvent(data); toast("Party created", "ok"); go("#/event/" + created.id); }
     });
   }
 
@@ -684,46 +883,80 @@
       }
       if (!ev.paidAt) {
         const price = window.Api.priceFor(guests.length);
-        const extraTxt = price.extra > 0
-          ? ` + ${money(price.per)} × ${price.extra} extra`
-          : "";
+        const extraTxt = price.extra > 0 ? ` + ${money(price.per)} × ${price.extra} extra` : "";
+        const hint = guests.length ? "" : `<p class="muted mt-8" style="font-size:.86rem">Add guests below to unlock both options.</p>`;
         return `
-          <div class="card ticket reveal" style="background:var(--rose-soft);border:none">
-            <div class="row between wrap gap-16">
-              <div>
-                <div class="eyebrow">Ready to send</div>
-                <h3 style="margin-top:4px">Pay &amp; send ${guests.length} invitation${guests.length === 1 ? "" : "s"}</h3>
-                <p class="muted" style="font-size:.9rem">${money(price.base)} base (up to ${price.included})${extraTxt}
-                  = <b style="color:var(--rose-deep)">${money(price.totalCents)}</b></p>
+          <div class="card reveal">
+            <div class="eyebrow">Ready to invite ${guests.length} guest${guests.length === 1 ? "" : "s"}</div>
+            ${hint}
+            <div class="send-opts mt-16">
+              <div class="send-opt">
+                <span class="pill">Free</span>
+                <h4>Share the links yourself</h4>
+                <p class="muted">Copy each guest's RSVP link and drop it in your group chat, WhatsApp or email. Track replies live — no charge, ever.</p>
+                <button class="btn soft" id="ev-share" ${guests.length ? "" : "disabled"}>${icon("link")} Copy RSVP links</button>
               </div>
-              <button class="btn primary lg" id="ev-pay" ${guests.length ? "" : "disabled"}>${icon("send")} Pay &amp; send</button>
+              <div class="send-opt send-opt--pay">
+                <span class="pill rose">SMS · ${money(price.totalCents)}</span>
+                <h4>Activate SMS nudges</h4>
+                <p class="muted">Turn this on and RSVPplease texts each guest their link, auto-nudges the no-repliers, and logs every YES/NO reply. ${money(price.base)} up to ${price.included}${extraTxt}.</p>
+                <button class="btn primary" id="ev-pay" ${guests.length ? "" : "disabled"}>${icon("chat")} Activate SMS nudges</button>
+              </div>
             </div>
           </div>`;
       }
+      // SMS is active for this party. Guests added since activation may owe a
+      // $1-per-head top-up for anyone beyond the base allowance who wasn't
+      // already billed. Guests still within the allowance send for free.
+      const paidCount = ev.guestCountAtPayment || 0;
+      const p0 = window.Api.priceFor(0);
+      const paidExtra = Math.max(0, paidCount - p0.included);
+      const billedCents = p0.base + paidExtra * p0.per;
+      const newExtra = host.comped ? 0
+        : Math.max(0, Math.max(0, guests.length - p0.included) - Math.max(0, paidCount - p0.included));
+      const owed = newExtra * p0.per;
+      const newBtn = !uninvited ? ""
+        : owed > 0
+          ? `<button class="btn primary" id="ev-paynew">${icon("chat")} Pay ${money(owed)} &amp; text ${uninvited} new</button>`
+          : `<button class="btn soft" id="ev-sendnew">${icon("send")} Text ${uninvited} new invite${uninvited === 1 ? "" : "s"}</button>`;
       return `
-        <div class="card reveal" style="border-color:var(--ok)">
+        <div class="activate-card on reveal">
           <div class="row between wrap gap-16">
             <div>
-              <span class="pill ok"><span class="dot"></span>Paid · invites live</span>
-              <p class="muted mt-8" style="font-size:.9rem">${guests.length - uninvited} of ${guests.length} guests invited.</p>
+              <div class="activate-card__head">${icon("chat")} SMS nudges active</div>
+              <p class="muted mt-8" style="font-size:.9rem">RSVPplease is texting invites &amp; nudges. ${guests.length - uninvited} of ${guests.length} guests invited.${owed > 0 ? ` <b style="color:var(--rose-deep)">${newExtra} new beyond your first ${p0.included} — ${money(owed)} to text.</b>` : ""}</p>
             </div>
-            ${uninvited ? `<button class="btn soft" id="ev-sendnew">${icon("send")} Send ${uninvited} new invite${uninvited === 1 ? "" : "s"}</button>` : ""}
+            ${newBtn}
+          </div>
+          <div class="mt-16" style="max-width:380px">
+            <div class="bill-line"><span>Base — up to ${p0.included} guests</span><span>${money(p0.base)}</span></div>
+            ${paidExtra > 0 ? `<div class="bill-line"><span>${paidExtra} extra × ${money(p0.per)}</span><span>${money(paidExtra * p0.per)}</span></div>` : ""}
+            <div class="bill-line sum"><span>Billed for SMS</span><span>${money(billedCents)}</span></div>
           </div>
         </div>`;
     })();
 
     mount("events", `
-      <button class="crumb" data-back>${icon("chevronLeft")} All events</button>
+      <button class="crumb" data-back>${icon("chevronLeft")} All parties</button>
       <div class="page-head">
         <div>
           <div class="row gap-8">${dateChip(ev.date)}
-            <div><div class="eyebrow">${ev.paidAt ? "Active" : "Draft"}</div><h1 style="margin-top:2px">${esc(ev.name)}</h1></div>
+            <div><div style="margin-bottom:5px">${partyStatusPill(ev)}</div><h1 style="margin-top:2px">${esc(ev.name)}</h1></div>
           </div>
           <p class="muted mt-8">${fmt(ev.date)}${ev.location ? " · " + esc(ev.location) : ""}</p>
         </div>
         <div class="row gap-8">
           <button class="btn" data-templates>${icon("sliders")} Messages</button>
           <button class="btn ghost" data-edit>${icon("pencil")} Edit</button>
+          <div class="hdr-menu">
+            <button class="btn ghost" data-menu-btn aria-label="Party options">${icon("dots")}</button>
+            <div class="party-menu">
+              ${ev.archived
+                ? `<button data-archive="${ev.id}" data-val="0">${icon("archive")} Restore party</button>`
+                : `<button data-archive="${ev.id}" data-val="1">${icon("archive")} Archive</button>`}
+              <button class="danger" data-del="${ev.id}" data-name="${esc(ev.name)}">${icon("trash")} Delete</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -744,7 +977,7 @@
         <div style="overflow-x:auto">
           ${guests.length ? guestTable(guests) : `
             <div class="empty">
-              <p class="muted">No guests yet. Add them by name and mobile number — RSVPplease texts each a unique RSVP link.</p>
+              <p class="muted">No guests yet. Add them by name and mobile or email — each gets a unique RSVP link you can share for free, or send by SMS.</p>
               <button class="btn primary" id="ev-add2">${icon("plus")} Add your first guest</button>
             </div>`}
         </div>
@@ -753,9 +986,12 @@
     app.querySelector("[data-back]").addEventListener("click", () => go("#/events"));
     app.querySelector("[data-edit]").addEventListener("click", () => go("#/event/" + id + "/edit"));
     app.querySelector("[data-templates]").addEventListener("click", () => go("#/event/" + id + "/templates.html"));
+    bindPartyGrid(); // wires the archive / restore / delete menu in the header
     document.getElementById("ev-add")?.addEventListener("click", () => addGuestsModal(id));
     document.getElementById("ev-add2")?.addEventListener("click", () => addGuestsModal(id));
     document.getElementById("ev-pay")?.addEventListener("click", () => billingModal(id));
+    document.getElementById("ev-paynew")?.addEventListener("click", () => billingModal(id));
+    document.getElementById("ev-share")?.addEventListener("click", () => shareLinksModal(id));
     document.getElementById("ev-sendnew")?.addEventListener("click", async () => {
       const r = await window.Api.sendInvites(id); toast(`Sent ${r.sent} invite${r.sent === 1 ? "" : "s"}`, "ok"); render();
     });
@@ -852,30 +1088,80 @@
     });
   }
 
+  /* ---- Share links modal (the free path — host sends links themselves) - */
+  async function shareLinksModal(eventId) {
+    const guests = await window.Api.listGuests(eventId);
+    if (!guests.length) { toast("Add some guests first", "err"); return; }
+    const linkFor = (g) => window.Api.rsvpLink(g.token);
+    const rows = guests.map((g) => `
+      <div class="share-row">
+        <div class="share-row__who">
+          <div class="name">${esc(g.name || "Guest")}</div>
+          <div class="tel">${esc(linkFor(g))}</div>
+        </div>
+        <button class="btn ghost sm" data-link="${esc(linkFor(g))}">${icon("link")} Copy</button>
+      </div>`).join("");
+    const allText = guests.map((g) => `${g.name || "Guest"}: ${linkFor(g)}`).join("\n");
+    const body = el(`<div>
+      <div class="notice rose">${icon("info")}<span>Sharing is free. Send these however you like — text, WhatsApp, email. Replies land on your guest list in real time. No charge.</span></div>
+      <div class="share-list mt-16">${rows}</div>`);
+    body.querySelectorAll("[data-link]").forEach((b) =>
+      b.addEventListener("click", () => { copy(b.getAttribute("data-link")); toast("Link copied", "ok"); }));
+    modal({
+      title: "Share RSVP links",
+      body,
+      actions: [
+        { label: "Close", cls: "ghost", onClick: (c) => c() },
+        { label: `Copy all ${guests.length} links`, cls: "primary", onClick: (c) => { copy(allText); toast("All links copied", "ok"); c(); } },
+      ],
+    });
+  }
+
   /* ---- Billing modal --------------------------------------------------- */
+  //  Initial payment  → base fee + $1 per guest beyond the allowance.
+  //  Top-up (already paid, new guests added) → only $1 per *newly* over-allowance
+  //  head, no second base fee. If the new guests fit the allowance, $0 (just send).
   function billingModal(eventId) {
-    window.Api.listGuests(eventId).then((guests) => {
+    Promise.all([window.Api.listGuests(eventId), window.Api.getEvent(eventId)]).then(([guests, ev]) => {
       const p = window.Api.priceFor(guests.length);
-      const body = el(`<div>
-        <div class="card flat" style="background:var(--surface-soft);border:1px solid var(--line)">
+      const isTopup = !!(ev && ev.paidAt);
+      let totalCents, lines;
+      if (isTopup) {
+        const paidCount = (ev.guestCountAtPayment) || 0;
+        const newExtra = Math.max(0, Math.max(0, guests.length - p.included) - Math.max(0, paidCount - p.included));
+        totalCents = p.per * newExtra;
+        lines = `
+          <div class="price-line"><span>Already paid <span class="faint">(up to ${Math.max(paidCount, p.included)} guests)</span></span><span class="tabular faint">paid</span></div>
+          ${newExtra > 0
+            ? `<div class="price-line"><span>${newExtra} more beyond ${p.included} × ${money(p.per)}</span><span class="tabular">${money(totalCents)}</span></div>`
+            : `<div class="price-line"><span>New guests covered by your base fee</span><span class="tabular">${money(0)}</span></div>`}
+          <div class="price-line total"><span>Total today</span><span class="amt tabular">${money(totalCents)}</span></div>`;
+      } else {
+        totalCents = p.totalCents;
+        lines = `
           <div class="price-line"><span>Base fee <span class="faint">(up to ${p.included} guests)</span></span><span class="tabular">${money(p.base)}</span></div>
           ${p.extra > 0 ? `<div class="price-line"><span>${p.extra} extra guest${p.extra === 1 ? "" : "s"} × ${money(p.per)}</span><span class="tabular">${money(p.perTotal)}</span></div>` : ""}
-          <div class="price-line total"><span>Total today</span><span class="amt tabular">${money(p.totalCents)}</span></div>
-        </div>
+          <div class="price-line total"><span>Total today</span><span class="amt tabular">${money(totalCents)}</span></div>`;
+      }
+      const body = el(`<div>
+        <div class="card flat" style="background:var(--surface-soft);border:1px solid var(--line)">${lines}</div>
         <div class="notice rose mt-16">${icon("info")}
           <span>${window.Api.isBackendLive()
-            ? "You'll be redirected to Stripe Checkout to pay securely."
+            ? (totalCents > 0
+                ? "You'll be redirected to Stripe Checkout to pay securely, then your invitations send automatically."
+                : "Nothing to pay — these guests are covered by your base fee. We'll send their invites now.")
             : "Front-end preview: this simulates Stripe Checkout locally, then renders each invite SMS so you can see exactly what guests receive. Real charges &amp; texts go live in Phase 2."}</span></div>
       </div>`);
       modal({
-        title: "Pay & send invitations",
+        title: isTopup ? "Text your new guests" : "Activate SMS nudges",
         body,
         actions: [
           { label: "Cancel", cls: "ghost", onClick: (c) => c() },
-          { label: `Pay ${money(p.totalCents)} & send`, cls: "primary", onClick: async (c) => {
-            await window.Api.checkout(eventId);
+          { label: totalCents > 0 ? (isTopup ? `Pay ${money(totalCents)} & text` : `Activate — ${money(totalCents)}`) : "Text invites", cls: "primary", onClick: async (c) => {
+            const res = await window.Api.checkout(eventId);
+            if (res && res.redirect) return; // navigated to Stripe; webhook sends after payment
             const r = await window.Api.sendInvites(eventId);
-            c(); toast(`Paid · ${r.sent} invite${r.sent === 1 ? "" : "s"} sent`, "ok"); render();
+            c(); toast(`${totalCents > 0 ? "Paid · " : ""}${r.sent} invite${r.sent === 1 ? "" : "s"} sent`, "ok"); render();
           } },
         ],
       });
@@ -1129,6 +1415,7 @@
       if (pathRoute === "templates") return viewTemplatesPage();
       if (pathRoute === "pricing") return viewPricing();
       if (pathRoute === "stories") return viewStories();
+      if (pathRoute === "about") return viewAbout();
     }
 
     host = await window.Api.getHost();
@@ -1140,6 +1427,7 @@
     if (mroot === "templates" && !location.hash.includes("/event/")) return viewTemplatesPage();
     if (mroot === "pricing") return viewPricing();
     if (mroot === "stories") return viewStories();
+    if (mroot === "about") return viewAbout();
 
     if (!host) {
       return (mroot === "signin" || mroot === "login") ? viewAuth() : viewLanding();
@@ -1164,8 +1452,20 @@
     }
   }
 
+  // Returning from Stripe Checkout: success_url is `…?paid=1#/event/<id>`.
+  // Show a receipt toast once, then strip the query so a refresh won't repeat it
+  // (the clean #/event/<id> hash already routes to the right event).
+  function flashPaidReturn() {
+    const q = new URLSearchParams(location.search);
+    if (q.get("paid") === "1") {
+      history.replaceState(null, "", location.pathname + location.hash);
+      setTimeout(() => toast("Payment received — invitations are on their way 💌", "ok"), 400);
+    }
+  }
+
   window.__rsvpRender = render; // api.supabase.js calls this on auth-state change
   window.addEventListener("hashchange", render);
   window.addEventListener("DOMContentLoaded", render);
   if (document.readyState !== "loading") render();
+  flashPaidReturn();
 })();

@@ -134,6 +134,7 @@
         status: "draft",
         paidAt: null,
         guestCountAtPayment: 0,
+        archived: false,
         createdAt: Date.now(),
       };
       db.events[id] = ev;

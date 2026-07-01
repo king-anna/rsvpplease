@@ -31,19 +31,33 @@ Deno.serve(async (req) => {
     const db = adminClient();
     if (eventId) {
       const { data: event } = await db.from("events").select("*").eq("id", eventId).single();
-      if (event && !event.paid_at) {
-        const { count } = await db.from("guests")
-          .select("*", { count: "exact", head: true }).eq("event_id", eventId);
-        const paidAt = new Date().toISOString();
+      if (event) {
+        // The count this session paid up to (from checkout). Falls back to a
+        // fresh count. guest_count_at_payment only ever grows — a top-up bumps
+        // it so future top-ups bill only the *next* newly-added guests.
+        const billedCount = Number(session.metadata?.guest_count ?? NaN);
+        let paidCount = Number.isFinite(billedCount) ? billedCount : null;
+        if (paidCount === null) {
+          const { count } = await db.from("guests")
+            .select("*", { count: "exact", head: true }).eq("event_id", eventId);
+          paidCount = count ?? 0;
+        }
+        // Keep the original paid_at on a top-up; only set it on first payment.
+        const paidAt = event.paid_at || new Date().toISOString();
         await db.from("events").update({
-          status: "active", paid_at: paidAt, guest_count_at_payment: count ?? 0,
+          status: "active",
+          paid_at: paidAt,
+          guest_count_at_payment: Math.max(event.guest_count_at_payment ?? 0, paidCount),
         }).eq("id", eventId);
         await db.from("payments").update({ status: "paid" }).eq("stripe_session_id", session.id);
 
         const { data: hostUser } = await db.auth.admin.getUserById(event.host_id);
         const hostName = hostUser?.user?.user_metadata?.name || "your host";
 
-        // Auto-send the invitations now that payment cleared.
+        // Auto-send invites. dispatchInvites only targets guests with
+        // invited_at = null, so this sends the whole list on first payment and
+        // just the newly-added guests on a top-up — and is safely idempotent
+        // if Stripe re-delivers this event.
         try {
           await dispatchInvites(db, { ...event, status: "active", paid_at: paidAt }, hostName);
         } catch (_) { /* logged in messages by dispatch; don't fail the webhook */ }

@@ -28,5 +28,6 @@ gen how       "From guest list to"  "a real headcount."       "Add guests, send,
 gen templates "Every text,"         "in your words."          "Customise your invite, nudge and auto-replies — SMS + email."
 gen pricing   "\$10 a party."        "Then just \$1 a guest."   "No subscription — pay only when you send."
 gen stories   "Built for"           "a full table."           "Two-way SMS, auto-nudges and a real headcount."
+gen about     "Made by a kid"        "for every tired host."   "The 12-year-old who got sick of chasing RSVPs."
 
 rm -rf "$OUT"

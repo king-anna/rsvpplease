@@ -31,29 +31,47 @@ Deno.serve(async (req) => {
     const basePrice = Deno.env.get("STRIPE_PRICE_BASE") || "price_1To0F0L3t6lGRaBqic1AbuER";
     const extraPrice = Deno.env.get("STRIPE_PRICE_EXTRA") || "price_1To0FJL3t6lGRaBqNN9syoTe";
 
-    // Quantity of the $1 "extra person" line. `BASE_INCLUDED` guests are covered
-    // by the base fee; everyone beyond that is billed per head.
+    // `BASE_INCLUDED` guests are covered by the one-time base fee; everyone
+    // beyond that is billed per head.
     //   0  → flat $10 base + $1 × every guest  (matches the dashboard estimate)
     //   9  → $10 covers up to 9, $1 from the 10th ("under 10 people")
     //   10 → $10 covers up to 10, $1 from the 11th
     const included = Number(Deno.env.get("STRIPE_BASE_INCLUDED") ?? 10);
-    const extraQty = Math.max(0, guestCount - included);
-
     const base = Number(Deno.env.get("PRICE_BASE_CENTS") ?? 1000);
     const per = Number(Deno.env.get("PRICE_PER_GUEST_CENTS") ?? 100);
-    const amount = base + per * extraQty;
+
+    // First payment charges the base + $1 for every guest beyond `included`.
+    // A later payment (guests added after the event was already paid for) is a
+    // TOP-UP: no second base fee — just $1 for each *newly* over-`included` head
+    // that hasn't been billed yet, computed from guest_count_at_payment.
+    const alreadyPaid = !!event.paid_at;
+    const paidCount = event.guest_count_at_payment ?? 0;
+    const currExtra = Math.max(0, guestCount - included);
+    const paidExtra = Math.max(0, paidCount - included);
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let amount: number;
+    if (!alreadyPaid) {
+      lineItems.push({ price: basePrice, quantity: 1 });
+      if (currExtra > 0) lineItems.push({ price: extraPrice, quantity: currExtra });
+      amount = base + per * currExtra;
+    } else {
+      const newExtra = Math.max(0, currExtra - paidExtra);
+      // Nothing new to bill (still within the base allowance): let the caller
+      // send the new invites directly — the event is already paid.
+      if (newExtra <= 0) return json({ nothing_owed: true, amount_cents: 0 });
+      lineItems.push({ price: extraPrice, quantity: newExtra });
+      amount = per * newExtra;
+    }
+
     const site = (Deno.env.get("PUBLIC_SITE_URL") || "").replace(/\/$/, "");
-
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-      { price: basePrice, quantity: 1 },
-    ];
-    if (extraQty > 0) lineItems.push({ price: extraPrice, quantity: extraQty });
-
+    // Query param BEFORE the hash so the SPA hash route stays clean
+    // (`#/event/<id>`) and lands on the event; `?paid=1` shows a receipt toast.
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       customer_email: user.email ?? undefined,
-      success_url: success_url || `${site}/index.html#/event/${event_id}?paid=1`,
+      success_url: success_url || `${site}/index.html?paid=1#/event/${event_id}`,
       cancel_url: cancel_url || `${site}/index.html#/event/${event_id}`,
       metadata: { event_id, guest_count: String(guestCount) },
     });

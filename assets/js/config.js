@@ -34,3 +34,12 @@ window.RSVP_CONFIG = {
   DEFAULT_NUDGE_AFTER_HOURS: 48,
   DEFAULT_NUDGE_MAX: 2,
 };
+
+// Optional override for local previews/demos: append ?backend=local to the URL
+// (or set localStorage.RSVP_BACKEND) to run against the in-browser store without
+// touching the live Supabase default. Only "local"/"supabase" are honoured.
+try {
+  var _ov = new URLSearchParams(location.search).get("backend") ||
+            localStorage.getItem("RSVP_BACKEND");
+  if (_ov === "local" || _ov === "supabase") window.RSVP_CONFIG.BACKEND = _ov;
+} catch (e) { /* no-op */ }

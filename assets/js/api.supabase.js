@@ -36,7 +36,8 @@
     date: r.event_date || "", location: r.location || "", rsvpDeadline: r.rsvp_deadline || "",
     coverImageUrl: r.cover_image_url || "", nudgeAfterHours: r.nudge_after_hours,
     nudgeMax: r.nudge_max, status: r.status, paidAt: ts(r.paid_at),
-    guestCountAtPayment: r.guest_count_at_payment, createdAt: ts(r.created_at) || 0,
+    guestCountAtPayment: r.guest_count_at_payment, archived: !!r.archived,
+    createdAt: ts(r.created_at) || 0,
     counts: countsFromGuests(r.guests),
   });
   const guestFromRow = (g) => ({
@@ -104,7 +105,7 @@
       const row = {};
       const map = { name: "name", description: "description", date: "event_date", location: "location",
         rsvpDeadline: "rsvp_deadline", nudgeAfterHours: "nudge_after_hours", nudgeMax: "nudge_max",
-        status: "status", coverImageUrl: "cover_image_url" };
+        status: "status", coverImageUrl: "cover_image_url", archived: "archived" };
       for (const k in map) if (k in p) row[map[k]] = (p[k] === "" && /date|deadline/i.test(k)) ? null : p[k];
       const { data, error } = await sb.from("events").update(row).eq("id", id)
         .select("*, guests(status, party_size)").single();
@@ -196,6 +197,9 @@
     async checkout(id) {
       const { data, error } = await sb.functions.invoke("stripe-checkout", { body: { event_id: id } });
       if (error) throw error;
+      // Already paid and the new guests are still within the base allowance —
+      // nothing to charge; the caller sends the new invites directly.
+      if (data && data.nothing_owed) return { ok: true, nothingOwed: true };
       if (data && data.url) { window.location.href = data.url; return { ok: true, redirect: true }; }
       throw new Error((data && data.error) || "Checkout could not start");
     },
