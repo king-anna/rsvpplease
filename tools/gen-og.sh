@@ -5,9 +5,10 @@ set -e
 cd "$(dirname "$0")/.."
 OUT="$(mktemp -d)"
 
+# gen <output-basename> <line1> <line2> <subtitle>
 gen() {
-  route="$1"; l1="$2"; l2="$3"; sub="$4"
-  cat > "$OUT/$route.svg" <<SVG
+  name="$1"; l1="$2"; l2="$3"; sub="$4"
+  cat > "$OUT/$name.svg" <<SVG
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs><linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#FCEFF4"/></linearGradient></defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
@@ -19,15 +20,17 @@ gen() {
   <text x="84" y="484" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="24" fill="#4A5C85">$sub</text>
 </svg>
 SVG
-  qlmanage -t -s 1200 -o "$OUT" "$OUT/$route.svg" >/dev/null 2>&1
-  sips -z 630 1200 "$OUT/$route.svg.png" --out "assets/img/og-$route.png" >/dev/null 2>&1
-  echo "wrote og-$route.png"
+  qlmanage -t -s 1200 -o "$OUT" "$OUT/$name.svg" >/dev/null 2>&1
+  sips -z 630 1200 "$OUT/$name.svg.png" --out "assets/img/$name.png" >/dev/null 2>&1
+  echo "wrote $name.png"
 }
 
-gen how       "From guest list to"  "a real headcount."       "Add guests, send, and auto-nudge the no-shows by text."
-gen templates "Every text,"         "in your words."          "Customise your invite, nudge and auto-replies — SMS + email."
-gen pricing   "\$10 a party."        "Then just \$1 a guest."   "No subscription — pay only when you send."
-gen stories   "Built for"           "a full table."           "Two-way SMS, auto-nudges and a real headcount."
-gen about     "Made by a kid"        "for every tired host."   "The 12-year-old who got sick of chasing RSVPs."
+# Default (homepage / shared link preview) — lead with FREE.
+gen og           "Free to start."       "Just share a link."      "Every guest gets a link to RSVP · SMS nudges from \$10"
+gen og-how       "From guest list to"   "a real headcount."       "Share links free, or auto-nudge the no-shows by text."
+gen og-templates "Every text,"          "in your words."          "Customise your invite, nudge and auto-replies — SMS + email."
+gen og-pricing   "Free to share."       "\$10 to text."            "Share RSVP links free — SMS nudges from \$10 a party, no subscription."
+gen og-stories   "Built for"            "a full table."           "Two-way SMS, auto-nudges and a real headcount."
+gen og-about     "Made by a kid"        "for every tired host."   "The 12-year-old who got sick of chasing RSVPs."
 
 rm -rf "$OUT"
