@@ -348,7 +348,35 @@
       window.Store.save(db);
       return { ok: true, autoReply: replyBody };
     },
+
+    /* Blog — the live app reads posts from Supabase (fed by the blog-webhook).
+       In this front-end preview we return one sample post so the layout and the
+       "generate invites" banner are viewable without a backend. */
+    async blogList() { return SAMPLE_POSTS.slice(); },
+    async blogGet(slug) { return SAMPLE_POSTS.find((p) => p.slug === slug) || null; },
   };
+
+  const SAMPLE_POSTS = [{
+    slug: "how-to-get-guests-to-actually-rsvp",
+    title: "How to get guests to actually RSVP (without nagging)",
+    excerpt: "People love your party — they just forget to reply. Here's the simple system that turns “maybe” into a real headcount.",
+    author: "The RSVPplease team",
+    tags: ["Hosting", "RSVPs"],
+    readMinutes: 4,
+    publishedAt: "2026-07-01T09:00:00Z",
+    coverImageUrl: "",
+    metaTitle: "How to get guests to actually RSVP — RSVPplease",
+    metaDescription: "The simple system that turns “maybe” into a real headcount — share a link, then let SMS nudges do the chasing.",
+    bodyHtml: `
+      <p>Every host knows the feeling: you send the invite, and then… silence. Not because people don't want to come — they just forget to reply.</p>
+      <h2>Make replying effortless</h2>
+      <p>The single biggest lever is friction. Give each guest a <strong>unique link</strong> they can tap once to say yes or no — no app, no account, no group-chat archaeology.</p>
+      <ul><li>One tap to confirm</li><li>Works on any phone</li><li>Your headcount updates itself</li></ul>
+      <h2>Then let the nudges do the chasing</h2>
+      <p>For the stragglers, a friendly automated text does what you'd feel awkward doing yourself. Set it once and watch the “going” number climb.</p>
+      <blockquote>Hosts using SMS nudges see replies roll in within hours — not the day before.</blockquote>
+      <p>That's the whole system: share a link for free, and switch on SMS when you want a guaranteed headcount.</p>`,
+  }];
 
   /* ---- Dispatcher ------------------------------------------------------ */
   // Phase 1 always routes to `local`. Phase 2 adds a `supabase` impl with the

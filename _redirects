@@ -1,0 +1,4 @@
+# Cloudflare Pages routing.
+# Blog posts have no per-slug file — serve the blog SPA shell for any /blog/<slug>
+# (200 = rewrite, so the clean URL is preserved for SEO & sharing).
+/blog/*   /blog.html   200

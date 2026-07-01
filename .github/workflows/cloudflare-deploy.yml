@@ -17,6 +17,9 @@ on:
       - "*.html"
       - "manifest.webmanifest"
       - "assets/**"
+      - "sitemap.xml"
+      - "robots.txt"
+      - "_redirects"
 
 env:
   PROJECT: rsvpplease
@@ -31,7 +34,7 @@ jobs:
       - name: Assemble static site
         run: |
           mkdir -p dist
-          cp ./*.html manifest.webmanifest sitemap.xml robots.txt dist/   # + prerendered pages
+          cp ./*.html manifest.webmanifest sitemap.xml robots.txt _redirects dist/   # + prerendered pages + SPA routing
           cp -r assets dist/
 
       - name: Ensure Pages project exists

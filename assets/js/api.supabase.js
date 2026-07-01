@@ -51,6 +51,12 @@
     id: m.id, eventId: m.event_id, guestId: m.guest_id, channel: m.channel,
     direction: m.direction, kind: m.kind, subject: m.subject, body: m.body, createdAt: ts(m.created_at) || 0,
   });
+  const postFromRow = (p) => ({
+    slug: p.slug, title: p.title, excerpt: p.excerpt || "", bodyHtml: p.body_html || "",
+    coverImageUrl: p.cover_image_url || "", author: p.author || "", tags: p.tags || [],
+    metaTitle: p.meta_title || "", metaDescription: p.meta_description || "",
+    readMinutes: p.read_minutes || 3, publishedAt: p.published_at || "",
+  });
 
   /* ---- the Supabase impl ---------------------------------------------- */
   const impl = {
@@ -237,6 +243,21 @@
       const { error } = await sb.rpc("admin_set_comped", { target: userId, value });
       if (error) throw error;
       return { ok: true };
+    },
+
+    /* Blog (public reads; posts are written by the blog-webhook Edge Function) */
+    async blogList() {
+      const { data, error } = await sb.from("posts")
+        .select("slug,title,excerpt,cover_image_url,author,tags,read_minutes,published_at")
+        .eq("published", true).order("published_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map(postFromRow);
+    },
+    async blogGet(slug) {
+      const { data, error } = await sb.from("posts")
+        .select("*").eq("slug", slug).eq("published", true).maybeSingle();
+      if (error) throw error;
+      return data ? postFromRow(data) : null;
     },
   };
 

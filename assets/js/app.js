@@ -81,6 +81,7 @@
     pricing:   ["Pricing — RSVPplease", "Share RSVP links free, forever. Or let RSVPplease text every guest for $10 per event — up to 10 guests, then $1 each. No subscription."],
     stories:   ["Why RSVPplease works", "Two-way SMS, automatic nudges and a real headcount for your next event — see why guests actually reply."],
     about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old who was tired of watching her mum chase everyone for a simple yes or no. Meet Eva."],
+    blog:      ["The RSVPplease blog — hosting & RSVP tips", "Guides and stories on planning events and getting guests to actually reply — from the team building RSVPplease."],
     signin:    ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
     login:     ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
     events:    ["Your parties — RSVPplease", "Manage all your parties, guests and RSVPs — share links free, or activate SMS to chase the replies for you."],
@@ -110,6 +111,7 @@
   function lpIcon(name, size = 18) {
     const D = {
       arrow: "M5 12h14M13 6l6 6-6 6",
+      chevronLeft: "M15 18l-6-6 6-6",
       spark: "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z",
       send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z",
       chat: "M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z",
@@ -155,7 +157,7 @@
   }
 
   function lpNav(active) {
-    const links = [["How it works", "/how.html", "how"], ["Templates", "/templates.html", "templates"], ["Pricing", "/pricing.html", "pricing"], ["Stories", "/stories.html", "stories"], ["About", "/about.html", "about"]];
+    const links = [["How it works", "/how.html", "how"], ["Templates", "/templates.html", "templates"], ["Pricing", "/pricing.html", "pricing"], ["Blog", "/blog.html", "blog"], ["Stories", "/stories.html", "stories"], ["About", "/about.html", "about"]];
     return `<nav class="lp-nav"><div class="lp-container lp-nav__inner">
       ${lpLogo}
       <div class="lp-nav__links">
@@ -173,7 +175,7 @@
       <div class="lp-footer__grid">
         <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
         ${col("Product", [["How it works", "/how.html"], ["Pricing", "/pricing.html"], ["Templates", "/templates.html"]])}
-        ${col("Company", [["About", "/about.html"], ["Stories", "/stories.html"]])}
+        ${col("Company", [["About", "/about.html"], ["Blog", "/blog.html"], ["Stories", "/stories.html"]])}
         ${col("Get started", [["Sign in", "/#/signin"]])}
       </div>
       <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
@@ -601,6 +603,118 @@
         <p class="lp-final__sub">Free to start. No card, no catch — just a full table.</p>
         <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
       </div></div></section>`);
+  }
+
+  /* ---- Blog (content fed by the blog-webhook Edge Function) ------------- */
+  // Resolve the post slug from the clean URL (/blog/<slug>, prod) or the hash
+  // fallback (#/blog/<slug>, used in local preview).
+  function blogSlug() {
+    const fromPath = (location.pathname.match(/^\/blog\/(.+?)\/?$/) || [])[1];
+    const fromHash = (location.hash.match(/^#\/?blog\/(.+?)\/?$/) || [])[1];
+    try { return decodeURIComponent(fromPath || fromHash || ""); } catch (e) { return fromPath || fromHash || ""; }
+  }
+  function blogDate(iso) {
+    const d = iso ? new Date(iso) : null;
+    return d && !isNaN(d) ? d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "";
+  }
+  function blogCover(p, tall) {
+    const grad = partyGradient(p.slug);
+    return p.coverImageUrl
+      ? `<div class="blog-cover${tall ? " blog-cover--tall" : ""}" style="background-image:url('${esc(p.coverImageUrl)}')"></div>`
+      : `<div class="blog-cover${tall ? " blog-cover--tall" : ""}" style="background:${grad}"><span class="blog-cover__mark">RSVP<b>please</b></span></div>`;
+  }
+  // The "generate invites" banner that closes every post.
+  function inviteBanner() {
+    return `
+      <aside class="blog-cta lp-reveal">
+        <div>
+          <div class="eyebrow">${lpIcon("spark", 14)} Ready to host?</div>
+          <h3 class="blog-cta__t">Send invitations your guests actually reply to.</h3>
+          <p class="blog-cta__d">Create an event and share a unique RSVP link with every guest — free. Switch on SMS when you want us to chase the no-replies.</p>
+        </div>
+        <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Generate invites — free ${lpIcon("arrow", 18)}</button>
+      </aside>`;
+  }
+  function blogCard(p) {
+    const meta = [blogDate(p.publishedAt), p.readMinutes ? p.readMinutes + " min read" : ""].filter(Boolean).join(" · ");
+    return `
+      <a class="blog-card lp-reveal" href="/blog/${esc(p.slug)}" data-post="${esc(p.slug)}">
+        ${blogCover(p)}
+        <div class="blog-card__body">
+          ${p.tags && p.tags.length ? `<span class="blog-tag">${esc(p.tags[0])}</span>` : ""}
+          <h3 class="blog-card__t">${esc(p.title)}</h3>
+          <p class="blog-card__x">${esc(p.excerpt)}</p>
+          <div class="blog-card__meta">${esc(meta)}</div>
+        </div>
+      </a>`;
+  }
+  async function viewBlogIndex() {
+    let posts = [];
+    try { posts = await window.Api.blogList(); } catch (e) { /* show empty state */ }
+    const grid = posts.length
+      ? `<div class="blog-grid">${posts.map(blogCard).join("")}</div>`
+      : `<div class="mk-abt-note lp-reveal" style="margin-top:8px">
+           <span class="mk-abt-note__ic">${lpIcon("chat", 22)}</span>
+           <h2 class="mk-abt-note__t">Fresh posts on the way.</h2>
+           <p class="mk-abt-note__d">We're just getting started — check back soon for hosting tips, RSVP playbooks and real party stories.</p>
+         </div>`;
+    lpShell("blog", `
+      <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("chat", 15)} The blog</span>
+        <h1 class="lp-h1">Hosting tips &amp; <span class="lp-underline">RSVP playbooks</span>.</h1>
+        <p class="mk-phero__lede">Guides, ideas and stories on planning events and getting guests to actually reply — from the team building RSVPplease.</p>
+      </div></header>
+      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
+        ${grid}
+      </div></section>`);
+  }
+  async function viewBlogPost(slug) {
+    let p = null;
+    try { p = await window.Api.blogGet(slug); } catch (e) { /* not found */ }
+    if (!p) {
+      lpShell("blog", `
+        <section class="lp-section"><div class="lp-container" style="text-align:center;max-width:640px">
+          <div class="mk-abt-note lp-reveal">
+            <span class="mk-abt-note__ic">${lpIcon("chat", 22)}</span>
+            <h2 class="mk-abt-note__t">Post not found</h2>
+            <p class="mk-abt-note__d">This article may have moved. Head back to the blog to find what you're after.</p>
+            <div style="margin-top:20px"><a class="lp-btn lp-btn--outline lp-btn--lg" href="/blog.html">${lpIcon("chevronLeft", 16)} Back to blog</a></div>
+          </div>
+        </div></section>`);
+      document.title = "Post not found — RSVPplease";
+      return;
+    }
+    // Per-post SEO meta (client-side, like the reference site).
+    const title = p.metaTitle || `${p.title} — RSVPplease`;
+    const desc = (p.metaDescription || p.excerpt || "").slice(0, 300);
+    document.title = title;
+    const setm = (sel, v) => { const el = document.head.querySelector(sel); if (el && v) el.setAttribute("content", v); };
+    setm('meta[name="description"]', desc);
+    setm('meta[property="og:title"]', title);
+    setm('meta[property="og:description"]', desc);
+    setm('meta[name="twitter:title"]', title);
+    setm('meta[name="twitter:description"]', desc);
+    if (p.coverImageUrl) { setm('meta[property="og:image"]', p.coverImageUrl); setm('meta[name="twitter:image"]', p.coverImageUrl); }
+    const canon = document.head.querySelector('link[rel="canonical"]');
+    if (canon) canon.setAttribute("href", "https://rsvpplease.app/blog/" + p.slug);
+
+    const meta = [p.author, blogDate(p.publishedAt), p.readMinutes ? p.readMinutes + " min read" : ""].filter(Boolean).join(" · ");
+    lpShell("blog", `
+      <article class="blog-post">
+        <div class="lp-container blog-post__head lp-reveal">
+          <a class="blog-back" href="/blog.html" data-bloghome>${lpIcon("chevronLeft", 16)} Back to blog</a>
+          ${p.tags && p.tags.length ? `<div class="blog-taglist">${p.tags.map((t) => `<span class="blog-tag">${esc(t)}</span>`).join("")}</div>` : ""}
+          <h1 class="blog-post__t">${esc(p.title)}</h1>
+          ${p.excerpt ? `<p class="blog-post__lede">${esc(p.excerpt)}</p>` : ""}
+          <div class="blog-post__meta">${esc(meta)}</div>
+        </div>
+        ${p.coverImageUrl ? `<div class="lp-container"><div class="blog-hero" style="background-image:url('${esc(p.coverImageUrl)}')"></div></div>` : ""}
+        <div class="lp-container blog-body__wrap">
+          <div class="blog-body lp-reveal">${p.bodyHtml || ""}</div>
+          ${inviteBanner()}
+        </div>
+      </article>`);
+    window.scrollTo(0, 0);
   }
 
   function showCheckEmail(email) {
@@ -1416,6 +1530,7 @@
       if (pathRoute === "pricing") return viewPricing();
       if (pathRoute === "stories") return viewStories();
       if (pathRoute === "about") return viewAbout();
+      if (pathRoute === "blog") { const s = blogSlug(); return s ? viewBlogPost(s) : viewBlogIndex(); }
     }
 
     host = await window.Api.getHost();
@@ -1428,6 +1543,7 @@
     if (mroot === "pricing") return viewPricing();
     if (mroot === "stories") return viewStories();
     if (mroot === "about") return viewAbout();
+    if (mroot === "blog") { const s = blogSlug(); return s ? viewBlogPost(s) : viewBlogIndex(); }
 
     if (!host) {
       return (mroot === "signin" || mroot === "login") ? viewAuth() : viewLanding();

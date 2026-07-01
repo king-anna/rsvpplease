@@ -14,3 +14,7 @@ verify_jwt = false
 
 [functions.notify-host]
 verify_jwt = false
+
+# Content automation posts articles here; it authenticates with x-blog-secret.
+[functions.blog-webhook]
+verify_jwt = false
