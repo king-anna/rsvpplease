@@ -880,7 +880,7 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .mk-abt__d{font-size:16.5px;line-height:1.65;color:var(--text-muted);margin:0 0 12px;}
 .mk-abt__d em{color:var(--brand-primary-press);font-style:normal;font-weight:600;}
 .mk-abt__media{display:flex;justify-content:center;min-width:0;}
-.mk-abt__photo{width:100%;max-width:430px;border-radius:var(--radius-2xl);box-shadow:var(--shadow-lg);object-fit:cover;}
+.mk-abt__photo{width:100%;max-width:300px;height:auto;aspect-ratio:3/4;border-radius:var(--radius-2xl);box-shadow:var(--shadow-lg);object-fit:cover;}
 .mk-abt__sign{font-family:var(--lp-script);font-size:27px;color:var(--brand-primary-press);margin:8px 0 0;}
 
 /* spreadsheet-chaos graphic */
