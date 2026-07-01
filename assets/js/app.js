@@ -91,9 +91,16 @@
   function setMeta(key) {
     const m = META[key] || META[""];
     document.title = m[0];
-    const set = (sel) => { const el = document.head.querySelector(sel); if (el) el.setAttribute("content", m[/title/.test(sel) ? 0 : 1]); };
-    ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]',
-     'meta[name="twitter:title"]', 'meta[name="twitter:description"]'].forEach(set);
+    const ogImgs = { how: "og-how", templates: "og-templates", pricing: "og-pricing", stories: "og-stories" };
+    const img = "https://rsvpplease.app/assets/img/" + (ogImgs[key] || "og") + ".png";
+    const set = (sel, v) => { const el = document.head.querySelector(sel); if (el) el.setAttribute("content", v); };
+    set('meta[name="description"]', m[1]);
+    set('meta[property="og:title"]', m[0]);
+    set('meta[property="og:description"]', m[1]);
+    set('meta[name="twitter:title"]', m[0]);
+    set('meta[name="twitter:description"]', m[1]);
+    set('meta[property="og:image"]', img);
+    set('meta[name="twitter:image"]', img);
   }
 
   /* ===================================================================== */
@@ -123,13 +130,7 @@
     return `<span class="lp-avstack">${names.map((n, i) =>
       `<span class="lp-av" style="width:${size}px;height:${size}px;background:${cols[i % cols.length]}">${esc((n[0] || "·").toUpperCase())}</span>`).join("")}</span>`;
   }
-  const lpLogo = `<a href="/" aria-label="RSVP please" style="display:inline-flex;align-items:center;text-decoration:none">
-    <span style="position:relative;display:inline-flex;align-items:baseline;background:var(--brand-primary);color:#fff;
-      border-radius:.7em .7em .7em .18em;padding:.16em .5em .2em;font-family:var(--lp-display);font-weight:700;font-size:23px;letter-spacing:-.02em;line-height:1">
-      <span style="font-weight:800;letter-spacing:.01em">RSVP</span>
-      <span style="font-weight:600;opacity:.9;margin-left:.36em">please</span>
-      <span style="position:absolute;left:.55em;bottom:-.26em"><svg width=".36em" height=".36em" viewBox="0 0 20 20" style="display:block;overflow:visible" aria-hidden="true"><path d="M2 2 L18 2 L2 18 Z" fill="var(--brand-primary)"/></svg></span>
-    </span></a>`;
+  const lpLogo = `<a href="/" class="lp-logo" aria-label="RSVP please"><span class="lp-logo__b">RSVP<span class="pls">please</span></span></a>`;
 
   function lpReveal() {
     const root = app.querySelector(".lp-root");
@@ -149,7 +150,7 @@
   }
 
   function lpNav(active) {
-    const links = [["How it works", "/how", "how"], ["Templates", "/templates", "templates"], ["Pricing", "/pricing", "pricing"], ["Stories", "/stories", "stories"]];
+    const links = [["How it works", "/how.html", "how"], ["Templates", "/templates.html", "templates"], ["Pricing", "/pricing.html", "pricing"], ["Stories", "/stories.html", "stories"]];
     return `<nav class="lp-nav"><div class="lp-container lp-nav__inner">
       ${lpLogo}
       <div class="lp-nav__links">
@@ -166,8 +167,8 @@
     return `<footer class="lp-footer"><div class="lp-container">
       <div class="lp-footer__grid">
         <div>${lpLogo}<p class="lp-footer__tag">Invitations your guests actually reply to.</p></div>
-        ${col("Product", [["How it works", "/how"], ["Pricing", "/pricing"], ["Templates", "/templates"]])}
-        ${col("Company", [["Stories", "/stories"]])}
+        ${col("Product", [["How it works", "/how.html"], ["Pricing", "/pricing.html"], ["Templates", "/templates.html"]])}
+        ${col("Company", [["Stories", "/stories.html"]])}
         ${col("Get started", [["Sign in", "/#/signin"]])}
       </div>
       <div class="lp-footer__bar"><span>© 2026 RSVPplease</span><span>Made for people who love a full table.</span></div>
@@ -220,7 +221,7 @@
           <p class="lp-lede">Send each guest a personal RSVP link by text or email, then let RSVPplease nudge the no-shows by SMS — so you always have a real headcount.</p>
           <div class="lp-hero__cta">
             <button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start your invite ${lpIcon("arrow", 18)}</button>
-            <a class="lp-btn lp-btn--outline lp-btn--lg" href="/how">See how it works</a>
+            <a class="lp-btn lp-btn--outline lp-btn--lg" href="/how.html">See how it works</a>
           </div>
           <div class="lp-trust">
             ${lpAvatars(["Maya", "Sam", "Lena", "Ben", "Ada"], 34)}
@@ -327,58 +328,96 @@
       </div></div></section>`);
   }
 
-  /* ---- Pricing (real RSVPplease model — not the design's fake tiers) --- */
+  /* ---- Pricing ($10 + $1/guest) with a live guest-count calculator ----- */
   function viewPricing() {
-    const feat = (on, label) => `<li class="${on ? "" : "is-off"}">${lpIcon(on ? "check" : "x", 17)}${esc(label)}</li>`;
+    const inc = [
+      "SMS & email invitations", "Automatic SMS nudges & reminders",
+      "Two-way replies, logged to your list", "Customisable invite, nudge & replies",
+      "Real-time RSVP tracking", "Live guest list & party counts",
+      "A unique RSVP link per guest", "No app or account for your guests",
+    ];
     lpShell("pricing", `
       <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
-        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Simple, honest pricing</span>
-        <h1 class="lp-h1">Pay per event. <span class="lp-underline">No subscription</span>.</h1>
-        <p class="mk-phero__lede">Build your event and add guests for free. You only pay when you're ready to send the invitations.</p>
+        <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} One simple price</span>
+        <h1 class="lp-h1">$10 a party. Then just <span class="lp-underline">$1 a guest</span>.</h1>
+        <p class="mk-phero__lede">No tiers, no subscriptions. Every event is $10 flat for up to 10 guests — and a single dollar for each guest after that. Every feature included, every time.</p>
       </div></header>
-      <section class="lp-section" style="padding-top:8px"><div class="lp-container">
-        <div class="mk-tiers" style="grid-template-columns:minmax(0,420px);justify-content:center">
-          <div class="mk-tier mk-tier--feat lp-reveal">
-            <span class="mk-tier__flag">Pay only when you send</span>
-            <div class="mk-tier__name">Per event</div>
-            <p class="mk-tier__desc">Everything RSVPplease does, priced per party.</p>
-            <div class="mk-tier__price"><span class="mk-tier__amt">$10</span><span class="mk-tier__per">/ event</span></div>
-            <div class="mk-tier__note">covers up to 10 guests · then $1 per extra guest</div>
-            <div class="mk-tier__cta"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start style="width:100%">Start an invite ${lpIcon("arrow", 18)}</button></div>
-            <ul class="mk-tier__feats">
-              ${feat(true, "Up to 10 guests included")}
-              ${feat(true, "+$1 per extra guest")}
-              ${feat(true, "SMS & email invitations")}
-              ${feat(true, "Automatic SMS nudges")}
-              ${feat(true, "Two-way replies, logged")}
-              ${feat(true, "Customisable messages")}
-              ${feat(false, "No monthly fee — ever")}
+
+      <section class="lp-section" style="padding-top:12px"><div class="lp-container">
+        <div class="mk-calc lp-reveal">
+          <div class="mk-calc__left">
+            <span class="lp-eyebrow">${lpIcon("users", 15)} Estimate your event</span>
+            <h2 class="lp-h2">How big is the guest list?</h2>
+            <p class="lp-lede" style="margin-top:14px">Drag to see exactly what you'd pay. The first 10 guests are covered by the $10 base — every guest after is just $1.</p>
+            <div class="mk-calc__count"><strong id="calc-n">25</strong><span id="calc-nlbl">guests</span></div>
+            <input class="mk-calc__range" id="calc-range" type="range" min="1" max="250" step="1" value="25" aria-label="Number of guests">
+            <div class="mk-calc__scale"><span>1</span><span>250</span></div>
+          </div>
+          <div class="mk-calc__card">
+            <div class="mk-calc__total"><span class="mk-calc__cur">$</span><span class="mk-calc__amt" id="calc-amt">25</span></div>
+            <div class="mk-calc__sub">total for this event</div>
+            <ul class="mk-calc__break">
+              <li><span>Base — first 10 guests</span><span>$10</span></li>
+              <li><span id="calc-xlbl">15 extra guests × $1</span><span id="calc-x">$15</span></li>
+              <li class="mk-calc__break--sum"><span>Total</span><span id="calc-sum">$25</span></li>
             </ul>
+            <button class="lp-btn lp-btn--primary lp-btn--lg" data-start style="width:100%;margin-top:18px">Start this invite ${lpIcon("arrow", 18)}</button>
+            <p class="mk-calc__fine">Pay once when you send. No subscription, cancel anytime.</p>
           </div>
         </div>
       </div></section>
+
       <section class="lp-section lp-section--alt"><div class="lp-container">
+        <div class="lp-section__head lp-reveal">
+          <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("check", 15)} Everything's in the box</span>
+          <h2 class="lp-h2">One price. The whole product.</h2>
+          <p class="lp-lede" style="text-align:center;margin:14px auto 0">No feature gates or upsells — every event gets all of it.</p>
+        </div>
+        <div class="mk-inc-grid lp-reveal">
+          ${inc.map((f) => `<div class="mk-inc"><span class="mk-inc__ic">${lpIcon("check", 15)}</span>${esc(f)}</div>`).join("")}
+        </div>
+      </div></section>
+
+      <section class="lp-section"><div class="lp-container">
         <div class="lp-section__head lp-reveal">
           <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("spark", 15)} Pricing FAQ</span>
           <h2 class="lp-h2">No surprises on the bill.</h2>
         </div>
         <div class="mk-faq lp-reveal">
-          ${[["What does the $10 cover?", "One event with up to 10 guests — invitations by SMS and/or email, automatic nudges to non-responders, two-way replies, and a live guest list. Beyond 10 guests it's just $1 per extra guest."],
-             ["Is it really pay-per-event?", "Yes — no subscription and no monthly fee. You build the event and add guests for free, and only pay when you send the invites."],
-             ["Do my guests ever pay?", "Never. Guests receive their invite and reply completely free — no app and no account to create."],
-             ["Can I send by email instead of SMS?", "Both. You choose per guest whether they're invited by text, email, or both."]]
-            .map(([q, a], i) => `<details class="mk-faq__item" ${i === 0 ? "open" : ""}>
-              <summary class="mk-faq__q">${esc(q)}<span class="mk-faq__plus">${lpIcon("plus", 15)}</span></summary>
-              <p class="mk-faq__a">${esc(a)}</p></details>`).join("")}
+          ${[["How exactly is the price worked out?", "Every event is $10 for the first 10 guests, then $1 for each guest beyond that. A 10-guest party is $10; a 40-guest party is $40. That's the whole formula."],
+             ["Is it per event or a subscription?", "Per event. You pay once when you send the invite — there's no monthly fee and nothing to cancel."],
+             ["Do SMS nudges cost extra?", "No. Automatic SMS nudges and reminders are included for every guest, at no additional charge."],
+             ["What if my guest count changes?", "You only pay for the guests you actually invite. Add more later and you're charged $1 each; if fewer come, there's nothing extra to pay."],
+             ["Do my guests ever pay?", "Never. Guests RSVP and receive nudges completely free, with no app or account."]]
+            .map(([q, a], i) => `<details class="mk-faq__item" ${i === 0 ? "open" : ""}><summary class="mk-faq__q">${esc(q)}<span class="mk-faq__plus">${lpIcon("plus", 15)}</span></summary><p class="mk-faq__a">${esc(a)}</p></details>`).join("")}
         </div>
       </div></section>
-      <section class="lp-section"><div class="lp-container"><div class="lp-final lp-reveal">
-        <h2 class="lp-h2">Start free. Pay when you send.</h2>
-        <p class="lp-final__sub">No card to begin — just better RSVPs.</p>
+
+      <section class="lp-section lp-section--alt"><div class="lp-container"><div class="lp-final lp-reveal">
+        <h2 class="lp-h2">$10 and you're sending.</h2>
+        <p class="lp-final__sub">One price, every feature — just better RSVPs.</p>
         <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
       </div></div></section>`);
-  }
 
+    // Live calculator ($10 base incl. 10 guests, +$1 each after)
+    const range = document.getElementById("calc-range");
+    if (range) {
+      const upd = () => {
+        const g = Number(range.value);
+        const p = window.Api.priceFor(g); // cents: {base, per, extra, perTotal, totalCents}
+        document.getElementById("calc-n").textContent = g;
+        document.getElementById("calc-nlbl").textContent = g === 1 ? "guest" : "guests";
+        document.getElementById("calc-amt").textContent = Math.round(p.totalCents / 100);
+        document.getElementById("calc-xlbl").textContent = `${p.extra} extra ${p.extra === 1 ? "guest" : "guests"} × $1`;
+        document.getElementById("calc-x").textContent = "$" + Math.round(p.perTotal / 100);
+        document.getElementById("calc-sum").textContent = "$" + Math.round(p.totalCents / 100);
+        const pct = ((g - Number(range.min)) / (Number(range.max) - Number(range.min))) * 100;
+        range.style.background = `linear-gradient(90deg, var(--brand-primary) ${pct}%, var(--surface-sunken) ${pct}%)`;
+      };
+      range.addEventListener("input", upd);
+      upd();
+    }
+  }
   /* ---- Templates = the real customisable MESSAGE templates ------------- */
   function viewTemplatesPage() {
     const tpl = (c1, c2, kicker, title, meta) => `<div class="mk-tpl lp-reveal">
@@ -713,7 +752,7 @@
 
     app.querySelector("[data-back]").addEventListener("click", () => go("#/events"));
     app.querySelector("[data-edit]").addEventListener("click", () => go("#/event/" + id + "/edit"));
-    app.querySelector("[data-templates]").addEventListener("click", () => go("#/event/" + id + "/templates"));
+    app.querySelector("[data-templates]").addEventListener("click", () => go("#/event/" + id + "/templates.html"));
     document.getElementById("ev-add")?.addEventListener("click", () => addGuestsModal(id));
     document.getElementById("ev-add2")?.addEventListener("click", () => addGuestsModal(id));
     document.getElementById("ev-pay")?.addEventListener("click", () => billingModal(id));

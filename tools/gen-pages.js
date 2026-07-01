@@ -31,6 +31,8 @@ for (const [route, [title, desc, url]] of Object.entries(PAGES)) {
     .replace(/(<meta name="twitter:title" content=")[^"]*(")/, (_, a, b) => a + T + b)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, (_, a, b) => a + D + b)
     .replace(/(<meta name="twitter:description" content=")[^"]*(")/, (_, a, b) => a + D + b)
+    .replace(/(<meta property="og:image" content=")[^"]*(")/, (_, a, b) => a + `https://rsvpplease.app/assets/img/og-${route}.png` + b)
+    .replace(/(<meta name="twitter:image" content=")[^"]*(")/, (_, a, b) => a + `https://rsvpplease.app/assets/img/og-${route}.png` + b)
     .replace('<div id="app" class="shell">', `<div id="app" class="shell" data-route="${route}">`);
   fs.writeFileSync(path.join(root, `${route}.html`), h);
   console.log("wrote", route + ".html");

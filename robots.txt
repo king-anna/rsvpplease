@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /rsvp.html
+
+Sitemap: https://rsvpplease.app/sitemap.xml
