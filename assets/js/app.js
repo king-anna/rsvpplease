@@ -80,7 +80,7 @@
     templates: ["Message templates — RSVPplease", "Customise your invite, nudge and yes/no auto-replies for SMS and email, with a live phone preview as you type."],
     pricing:   ["Pricing — RSVPplease", "Share RSVP links free, forever. Or let RSVPplease text every guest for $10 per event — up to 10 guests, then $1 each. No subscription."],
     stories:   ["Why RSVPplease works", "Two-way SMS, automatic nudges and a real headcount for your next event — see why guests actually reply."],
-    about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old who was tired of watching her mum chase everyone for a simple yes or no. Meet Eva."],
+    about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old who was tired of watching her mum chase everyone for a simple yes or no. This is her story."],
     blog:      ["The RSVPplease blog — hosting & RSVP tips", "Guides and stories on planning events and getting guests to actually reply — from the team building RSVPplease."],
     signin:    ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
     login:     ["Sign in — RSVPplease", "Sign in to RSVPplease to create events, send invitations by SMS or email, and track RSVPs in real time."],
@@ -525,7 +525,7 @@
         <div class="lp-hero__cta lp-hero__cta--center"><button class="lp-btn lp-btn--primary lp-btn--lg" data-start>Start an invite ${lpIcon("arrow", 18)}</button></div>
       </div></div></section>`);
   }
-  /* ---- About (founder story — Eva & her mum) --------------------------- */
+  /* ---- About (founder story — a 12-year-old & her mum) ------------------ */
   function viewAbout() {
     const problemSheet = `
       <div class="mk-frame"><div class="mk-frame__body mk-sheet-wrap">
@@ -550,7 +550,7 @@
       <header class="mk-phero"><div class="lp-container mk-phero__inner lp-reveal">
         <span class="lp-eyebrow lp-eyebrow--center">${lpIcon("heart", 15)} Our story</span>
         <h1 class="lp-h1">It started with a tired mum and a <span class="lp-underline">12-year-old</span> who'd had enough.</h1>
-        <p class="mk-phero__lede">Every family has the person who hosts. Eva's mum was that person — and she was worn out from chasing everyone for a simple yes or no. So Eva built the thing that would chase them for her. That's RSVPplease.</p>
+        <p class="mk-phero__lede">Every family has the person who hosts. Our founder's mum was that person — and she was worn out from chasing everyone for a simple yes or no. So her daughter built the thing that would chase them for her. That's RSVPplease.</p>
       </div></header>
 
       <section class="lp-section"><div class="lp-container mk-abt">
@@ -558,7 +558,7 @@
           <div class="mk-abt__copy">
             <span class="mk-abt__eyebrow">${lpIcon("users", 14)} The problem</span>
             <h2 class="mk-abt__t">Nobody ever just… replied.</h2>
-            <p class="mk-abt__d">Eva watched her mum plan birthdays, dinners and the big family holidays the same way every time — a paper list, three group chats, and a running guess at how many people were actually coming.</p>
+            <p class="mk-abt__d">She watched her mum plan birthdays, dinners and the big family holidays the same way every time — a paper list, three group chats, and a running guess at how many people were actually coming.</p>
             <ul class="mk-wlist">
               <li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>Sticky notes that never matched the group chat</li>
               <li><span class="mk-wlist__ic">${lpIcon("check", 13)}</span>"Maybe" that stayed "maybe" until the day of</li>
@@ -571,7 +571,7 @@
           <div class="mk-abt__copy">
             <span class="mk-abt__eyebrow">${lpIcon("spark", 14)} The idea</span>
             <h2 class="mk-abt__t">So she built the nudge.</h2>
-            <p class="mk-abt__d">Eva was already teaching herself to code at school. One weekend she sketched a simple idea: a digital invite that texts your guests for you and keeps the count on its own.</p>
+            <p class="mk-abt__d">She was already teaching herself to code at school. One weekend she sketched a simple idea: a digital invite that texts your guests for you and keeps the count on its own.</p>
             <p class="mk-abt__d">Her mum was the very first user. For the first time, she knew her real headcount <em>before</em> the shopping trip — not after the party.</p>
           </div>
           <div class="mk-abt__media">${ideaPhone}</div>
@@ -579,14 +579,12 @@
       </div></section>
 
       <section class="lp-section" style="padding-top:8px"><div class="lp-container">
-        <div class="mk-feature lp-reveal">
+        <div class="mk-feature lp-reveal" style="grid-template-columns:1fr;max-width:760px;margin:0 auto;text-align:center">
           <div>
             <span class="lp-eyebrow">${lpIcon("pen", 15)} From the founder</span>
             <p class="mk-feature__quote">"I didn't set out to start a company. I just wanted my mum to stop stressing about who was coming. Turns out a lot of people's mums needed the same thing."</p>
-            <p class="mk-abt__sign">— Eva</p>
-            <div class="mk-feature__by">${lpAvatars(["Eva"], 48)}<div><div class="mk-feature__name">Eva</div><div class="mk-feature__event">Founder · still in school</div></div></div>
+            <p class="mk-feature__event" style="margin-top:14px">The founder · still in school</p>
           </div>
-          <div class="mk-abt__media"><img class="mk-abt__photo" src="/assets/img/eva.jpg" alt="Eva, the founder of RSVPplease" loading="lazy" width="675" height="900"></div>
         </div>
       </div></section>
 
@@ -594,7 +592,7 @@
         <div class="mk-abt-note lp-reveal">
           <span class="mk-abt-note__ic">${lpIcon("cake", 22)}</span>
           <h2 class="mk-abt-note__t">Still built by a student.</h2>
-          <p class="mk-abt-note__d">RSVPplease is still run by Eva — building between classes, homework and the occasional family party. The exact kind of party RSVPplease was made for.</p>
+          <p class="mk-abt-note__d">RSVPplease is still run by its founder — building between classes, homework and the occasional family party. The exact kind of party RSVPplease was made for.</p>
         </div>
       </div></section>
 

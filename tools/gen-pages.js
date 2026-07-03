@@ -17,7 +17,7 @@ const PAGES = {
   templates: ["Message templates — RSVPplease", "Customise your invite, nudge and yes/no auto-replies for SMS and email, with a live phone preview as you type.", "https://rsvpplease.app/templates"],
   pricing:   ["Pricing — RSVPplease", "$10 per event covers up to 10 guests, then $1 each. No subscription — pay only when you send your invitations.", "https://rsvpplease.app/pricing"],
   stories:   ["Why RSVPplease works", "Two-way SMS, automatic nudges and a real headcount for your next event — see why guests actually reply.", "https://rsvpplease.app/stories"],
-  about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old tired of watching her mum chase everyone for a simple yes or no. Meet Eva, the founder.", "https://rsvpplease.app/about"],
+  about:     ["About RSVPplease — our story", "RSVPplease was built by a 12-year-old tired of watching her mum chase everyone for a simple yes or no. This is her story.", "https://rsvpplease.app/about"],
 };
 
 for (const [route, [title, desc, url]] of Object.entries(PAGES)) {
