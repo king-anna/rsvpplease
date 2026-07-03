@@ -743,18 +743,30 @@
           <div class="field mb-24"><span class="label">Email</span>
             <input class="input" id="au-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
           <button class="btn primary block lg" id="au-go">Start planning ${icon("heart")}</button>
-          <p class="help text-c mt-16">No password yet — Phase 2 adds Supabase magic-link sign-in.</p>
+          <p class="help text-c mt-16">${window.Api.isBackendLive()
+            ? "We'll email you a magic sign-in link — no password needed."
+            : "No password yet — Phase 2 adds Supabase magic-link sign-in."}</p>
         </div>
       </div>`;
+    let busy = false;
     const submit = async () => {
+      if (busy) return;
       const name = val("au-name"), email = val("au-email");
       if (!name) return toast("Add your name to continue", "err");
       if (window.Api.isBackendLive() && !email) return toast("Add your email — we'll send a magic link", "err");
+      const btn = document.getElementById("au-go");
+      busy = true; btn.disabled = true; btn.textContent = "Sending your magic link…";
       try {
         const res = await window.Api.signIn({ name, email });
         if (res && res.pending) return showCheckEmail(res.email);
         host = res; go("#/events"); render();
-      } catch (e) { toast(e.message || "Sign-in failed", "err"); }
+      } catch (e) {
+        const msg = /timeout|504|fetch/i.test(String(e.message))
+          ? "Our sign-in emails are having a moment — please try again shortly."
+          : (e.message || "Sign-in failed");
+        toast(msg, "err");
+        busy = false; btn.disabled = false; btn.innerHTML = `Start planning ${icon("heart")}`;
+      }
     };
     document.getElementById("au-go").addEventListener("click", submit);
     app.querySelectorAll("input").forEach((i) =>
