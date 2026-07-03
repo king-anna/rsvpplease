@@ -19,3 +19,7 @@ dist/
 
 # Claude workspace
 .claude/
+
+# Playwright e2e
+test-results/
+playwright-report/

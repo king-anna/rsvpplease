@@ -1,0 +1,14 @@
+{
+  "name": "rsvpplease",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RSVPplease — static frontend + Supabase backend. This package only carries the e2e test tooling.",
+  "scripts": {
+    "gen:pages": "node tools/gen-pages.js",
+    "test:e2e": "playwright test",
+    "test:e2e:live": "E2E_LIVE=1 playwright test e2e/live-smoke.spec.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
