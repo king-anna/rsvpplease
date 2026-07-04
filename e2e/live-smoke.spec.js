@@ -44,9 +44,8 @@ test("backend: email sign-in is enabled in auth settings", async ({ request }) =
 });
 
 test("backend: magic-link email sends (registration)", async ({ request }) => {
-  // KNOWN BROKEN: /auth/v1/otp hangs then 504s at the send-email step — the
-  // SMTP config in the Supabase dashboard needs fixing. Un-fixme once done.
-  test.fixme(true, "SMTP hangs (504) — fix dashboard Auth → SMTP settings first");
+  // Regression guard for the 2026-07 SMTP outage (OTP hung → 504). Sends a
+  // real email to a test address, so live smoke stays opt-in.
   const res = await request.post(`${SUPABASE}/auth/v1/otp`, {
     headers: { apikey: ANON, "Content-Type": "application/json" },
     data: { email: "e2e-smoke@rsvpplease.app", create_user: true },
