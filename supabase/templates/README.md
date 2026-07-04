@@ -17,6 +17,13 @@ Notes
 - **Confirm signup vs Magic Link:** the app signs everyone in with
   `signInWithOtp`. Supabase sends *Confirm signup* to brand-new users and
   *Magic Link* to returning ones — so both matter for the sign-in flow.
+- **"Invited someone but they got the Confirm email":** Supabase only sends
+  the *Invite user* template for addresses with **no account yet** (via
+  dashboard → Users → Invite user). If the address already has an account
+  that was never confirmed (e.g. a sign-in email that didn't arrive), every
+  later magic-link or invite **re-sends Confirm signup** instead — by design.
+  The fix is simply for that person to tap the confirm link once; after that
+  they get Magic Link emails like everyone else.
 - Templates use Supabase's Go variables: `{{ .ConfirmationURL }}`,
   `{{ .Email }}`, `{{ .NewEmail }}` (change-email), `{{ .Token }}` (reauth).
   Don't rename them.
