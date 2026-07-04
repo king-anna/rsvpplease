@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!-- RSVPplease · MAGIC LINK (returning sign-in)
+     Paste into: Supabase → Authentication → Emails → Magic Link
+     Suggested subject: Your magic sign-in link 💌 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Your magic sign-in link</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FCEFF4;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">One tap and you're back to your parties — no password needed.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FCEFF4" style="background-color:#FCEFF4;">
+    <tr><td align="center" style="padding:44px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+
+        <tr><td align="center" style="padding:0 0 26px;">
+          <span style="display:inline-block;background-color:#E58AA9;color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:21px;letter-spacing:-0.5px;padding:10px 22px 12px;border-radius:18px 18px 18px 4px;">RSVP&nbsp;<span style="font-weight:normal;">please</span></span>
+        </td></tr>
+
+        <tr><td bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #F1D4E0;border-radius:24px;padding:44px 36px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td align="center" style="font-family:Georgia,'Times New Roman',serif;font-size:27px;line-height:1.25;color:#15223F;font-weight:bold;padding-bottom:14px;">Your magic sign-in link&nbsp;💌</td></tr>
+            <tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#4A5C85;padding-bottom:30px;">Tap the button and you're in — no password needed. Your parties, guest lists and RSVPs are right where you left them.</td></tr>
+            <tr><td align="center" style="padding-bottom:28px;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;background-color:#E58AA9;color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;text-decoration:none;padding:15px 42px;border-radius:999px;">Sign me in&nbsp;&rarr;</a>
+            </td></tr>
+            <tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.7;color:#8C7F75;">This link works once and expires in an hour.<br>Button not working? Paste this into your browser:</td></tr>
+            <tr><td align="center" style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;padding-top:8px;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#B86081;">{{ .ConfirmationURL }}</a></td></tr>
+          </table>
+        </td></tr>
+
+        <tr><td align="center" style="padding:26px 20px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.8;color:#9c868c;">
+          Didn't ask for this? Someone probably typed your email by mistake — you can safely ignore it.<br>
+          <span style="color:#B86081;font-weight:bold;">RSVPplease</span> · invitations your guests actually reply to · <a href="https://rsvpplease.app" style="color:#9c868c;">rsvpplease.app</a>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
