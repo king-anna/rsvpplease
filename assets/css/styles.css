@@ -1016,6 +1016,23 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   text-transform:uppercase;letter-spacing:.04em;margin:0 0 14px;padding-top:20px;border-top:1px solid var(--line);}
 .arch-section__head svg{color:var(--ink-faint);}
 
+/* ===== Guest invitation (rsvp.html) — designed invite card ===== */
+.invite.pad0{padding:0;overflow:hidden;}
+.inv-banner{position:relative;padding:46px 26px 30px;text-align:center;color:#fff;overflow:hidden;}
+.inv-kicker{position:relative;z-index:1;display:block;font-family:"Caveat",var(--font-display);font-size:1.7rem;line-height:1;color:rgba(255,255,255,.95);}
+.inv-title{position:relative;z-index:1;font-family:var(--font-display);font-size:2.1rem;line-height:1.08;font-weight:600;color:#fff;margin:8px 0 14px;text-wrap:balance;}
+.inv-hostline{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;color:rgba(255,255,255,.94);}
+.inv-host-av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.65);
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;color:#fff;}
+.inv-body{padding:22px 24px 26px;}
+.inv-confetti{position:absolute;inset:0;pointer-events:none;}
+.inv-confetti span{position:absolute;top:-14px;border-radius:2px;opacity:.85;animation:inv-fall linear infinite;}
+@keyframes inv-fall{
+  from{transform:translateY(-16px) rotate(0deg);}
+  to{transform:translateY(300px) rotate(340deg);}
+}
+@media (prefers-reduced-motion:reduce){.inv-confetti{display:none;}}
+
 /* ===== Blog (marketing · webhook-fed posts) ===== */
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));gap:26px;}
 .blog-card{display:flex;flex-direction:column;text-decoration:none;background:var(--surface-card);border:1px solid var(--border-subtle);
