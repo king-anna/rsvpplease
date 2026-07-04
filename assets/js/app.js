@@ -930,43 +930,180 @@
   /* ===================================================================== */
   /*  CREATE / EDIT EVENT                                                   */
   /* ===================================================================== */
+  // Full guest-view mock (banner + details) — used by the builder's live
+  // preview and the "Preview as guest" modal on the party page.
+  function invitePreviewHTML(ev, opts = {}) {
+    const D = window.InviteDesign;
+    const going = Number(ev.going) || 0;
+    const spots = Number(ev.spots) || 0;
+    const detail = (ic, text) => text ? `<div class="detail-line">${icon(ic)}<span>${esc(text)}</span></div>` : "";
+    return `
+      <div class="card invite ticket pad0" style="width:100%">
+        ${D.banner(ev, opts.titleTag || "div")}
+        <div class="inv-body">
+          <p class="muted text-c" style="margin:0 0 14px">Hi Sam — ${esc(ev.hostName || "your host")} would love to see you there.</p>
+          <div class="mb-16">
+            ${detail("calendar", ev.date ? fmt(ev.date) : "Date TBD")}
+            ${detail("location", ev.location || "Location TBD")}
+          </div>
+          ${spots ? `
+            <div class="inv-spots mb-16">
+              <div class="progress"><i class="ok" style="width:${Math.min(100, (going / spots) * 100)}%"></i></div>
+              <div class="inv-spots__txt"><span><b>${going}</b> going</span><span>${spots} spots</span></div>
+            </div>` : ""}
+          ${ev.description ? `<div class="host-note mb-16">${esc(ev.description)}</div>` : ""}
+          <div class="big-choice" style="pointer-events:none">
+            <span class="choice yes"><span class="big">Yes ${icon("heart")}</span>Count me in</span>
+            <span class="choice no"><span class="big">Can't make it</span>Maybe next time</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
   async function viewEventForm(id) {
     const ev = id ? await window.Api.getEvent(id) : null;
     const v = (k, d = "") => esc(ev ? (ev[k] ?? d) : d);
+    const D = window.InviteDesign;
+    // Builder state that isn't a plain input: theme, colour, photo, spots, +1.
+    const draft = {
+      theme: (ev && ev.theme) || "confetti",
+      palette: (ev && ev.palette) || "blush",
+      spots: (ev && ev.spots) || 40,
+      allowPlusOne: !ev || ev.allowPlusOne !== false,
+      coverImageUrl: (ev && ev.coverImageUrl) || "",
+      photoFile: null,
+    };
+
     mount("events", `
       <button class="crumb" data-back>${icon("chevronLeft")} ${id ? "Back to party" : "All parties"}</button>
       <div class="page-head"><div>
         <div class="eyebrow">${id ? "Edit" : "Create"}</div>
-        <h1>${id ? "Edit party" : "New party"}</h1>
+        <h1>${id ? "Edit party" : "Build your invite"}</h1>
+        <p class="muted mt-8" style="font-size:.9rem">Pick a vibe and add the details — the invitation updates live.</p>
       </div></div>
-      <div class="card reveal" style="max-width:680px">
-        <div class="field mb-16"><span class="label">Party name</span>
-          <input class="input" id="f-name" placeholder="Mara & Theo's Garden Party" value="${v("name")}"></div>
-        <div class="field-row mb-16">
-          <div class="field"><span class="label">Date &amp; time</span>
-            <input class="input" id="f-date" type="datetime-local" value="${v("date")}"></div>
-          <div class="field"><span class="label">RSVP deadline</span>
-            <input class="input" id="f-deadline" type="date" value="${v("rsvpDeadline")}"></div>
+
+      <div class="builder-grid">
+        <div class="card reveal">
+          <div class="field mb-16"><span class="label">Theme</span>
+            <div class="theme-chips">
+              ${Object.entries(D.THEMES).map(([k, t]) =>
+                `<button type="button" class="theme-chip${draft.theme === k ? " on" : ""}" data-th="${k}">${t.label}</button>`).join("")}
+            </div></div>
+          <div class="field mb-16"><span class="label">Color</span>
+            <div class="swatches">
+              ${Object.entries(D.PALETTES).map(([k, [c]]) =>
+                `<button type="button" class="swatch${draft.palette === k ? " on" : ""}" data-pal="${k}" title="${k}" style="background:${c}"></button>`).join("")}
+            </div></div>
+          <div class="field mb-16"><span class="label">Your photo <span class="faint">(optional)</span></span>
+            <div id="f-photo-zone"></div>
+            <input type="file" id="f-photo" accept="image/*" hidden></div>
+
+          <div class="field mb-16"><span class="label">Party name</span>
+            <input class="input" id="f-name" placeholder="Mara & Theo's Garden Party" value="${v("name")}"></div>
+          <div class="field mb-16"><span class="label">Message to guests <span class="faint">(optional)</span></span>
+            <textarea class="textarea" id="f-desc" placeholder="Drinks, dinner & dancing — dress code is garden chic.">${v("description")}</textarea></div>
+          <div class="field-row mb-16">
+            <div class="field"><span class="label">Date &amp; time</span>
+              <input class="input" id="f-date" type="datetime-local" value="${v("date")}"></div>
+            <div class="field"><span class="label">RSVP deadline</span>
+              <input class="input" id="f-deadline" type="date" value="${v("rsvpDeadline")}"></div>
+          </div>
+          <div class="field mb-16"><span class="label">Location</span>
+            <input class="input" id="f-loc" placeholder="14 Rosewood Lane, Brooklyn" value="${v("location")}"></div>
+
+          <div class="field-row mb-16" style="align-items:end">
+            <div class="field"><span class="label">How many can come?</span>
+              <div class="stepper">
+                <button type="button" id="f-spots-minus" aria-label="fewer">−</button>
+                <b id="f-spots">${draft.spots}</b>
+                <button type="button" id="f-spots-plus" aria-label="more">+</button>
+                <span class="muted" style="font-size:.82rem">spots</span>
+              </div></div>
+          </div>
+          <label class="switchrow mb-16" for="f-plus">
+            <span><b style="font-size:.92rem">Allow a +1</b><br><span class="muted" style="font-size:.82rem">Let guests bring a plus-one when they RSVP.</span></span>
+            <input type="checkbox" class="switch" id="f-plus" ${draft.allowPlusOne ? "checked" : ""}>
+          </label>
+
+          <div class="field-row mb-24">
+            <div class="field"><span class="label">Auto-nudge after</span>
+              <select class="input" id="f-nudgeh">
+                ${[24, 48, 72, 96].map((h) => `<option value="${h}" ${ev && ev.nudgeAfterHours === h ? "selected" : ""}>${h} hours of no reply</option>`).join("")}
+              </select></div>
+            <div class="field"><span class="label">Max nudges per guest</span>
+              <select class="input" id="f-nudgem">
+                ${[1, 2, 3].map((n) => `<option value="${n}" ${ev && ev.nudgeMax === n ? "selected" : ""}>${n}</option>`).join("")}
+              </select></div>
+          </div>
+          <div class="row gap-12">
+            <button class="btn primary lg" id="f-save">${icon("check")} ${id ? "Save changes" : "Create party"}</button>
+            <button class="btn ghost" data-back>Cancel</button>
+          </div>
         </div>
-        <div class="field mb-16"><span class="label">Location</span>
-          <input class="input" id="f-loc" placeholder="14 Rosewood Lane, Brooklyn" value="${v("location")}"></div>
-        <div class="field mb-16"><span class="label">A note for guests <span class="faint">(optional)</span></span>
-          <textarea class="textarea" id="f-desc" placeholder="Drinks, dinner & dancing — dress code is garden chic.">${v("description")}</textarea></div>
-        <div class="field-row mb-24">
-          <div class="field"><span class="label">Auto-nudge after</span>
-            <select class="input" id="f-nudgeh">
-              ${[24, 48, 72, 96].map((h) => `<option value="${h}" ${ev && ev.nudgeAfterHours === h ? "selected" : ""}>${h} hours of no reply</option>`).join("")}
-            </select></div>
-          <div class="field"><span class="label">Max nudges per guest</span>
-            <select class="input" id="f-nudgem">
-              ${[1, 2, 3].map((n) => `<option value="${n}" ${ev && ev.nudgeMax === n ? "selected" : ""}>${n}</option>`).join("")}
-            </select></div>
-        </div>
-        <div class="row gap-12">
-          <button class="btn primary lg" id="f-save">${icon("check")} ${id ? "Save changes" : "Create party"}</button>
-          <button class="btn ghost" data-back>Cancel</button>
-        </div>
+
+        <div class="builder-preview reveal"><div id="inv-preview"></div></div>
       </div>`);
+
+    const previewEvent = () => ({
+      name: val("f-name") || "Your party",
+      description: val("f-desc"),
+      date: val("f-date"),
+      location: val("f-loc"),
+      theme: draft.theme, palette: draft.palette,
+      spots: draft.spots, allowPlusOne: draft.allowPlusOne,
+      coverImageUrl: draft.coverImageUrl,
+      hostName: (host && host.name) || "You",
+      going: ev ? ev.counts.party : 0,
+    });
+    const paint = () => { document.getElementById("inv-preview").innerHTML = invitePreviewHTML(previewEvent()); };
+    const paintPhoto = () => {
+      const zone = document.getElementById("f-photo-zone");
+      zone.innerHTML = draft.coverImageUrl
+        ? `<div class="photo-set">
+             <span class="photo-thumb" style="background-image:url('${draft.coverImageUrl.replace(/'/g, "%27")}')"></span>
+             <button type="button" class="btn sm" id="f-photo-change">Change</button>
+             <button type="button" class="btn ghost sm" id="f-photo-rm">Remove</button>
+           </div>`
+        : `<button type="button" class="dropzone" id="f-photo-add">
+             <b>Add your photo</b><span class="faint">JPG or PNG — it becomes the invite banner</span>
+           </button>`;
+      const pick = () => document.getElementById("f-photo").click();
+      document.getElementById("f-photo-add")?.addEventListener("click", pick);
+      document.getElementById("f-photo-change")?.addEventListener("click", pick);
+      document.getElementById("f-photo-rm")?.addEventListener("click", () => {
+        draft.coverImageUrl = ""; draft.photoFile = null; paintPhoto(); paint();
+      });
+    };
+
+    // wire the builder controls
+    app.querySelectorAll("[data-th]").forEach((b) => b.addEventListener("click", () => {
+      draft.theme = b.dataset.th;
+      draft.palette = D.THEMES[draft.theme].palette; // theme picks its colour; swatches override
+      app.querySelectorAll("[data-th]").forEach((x) => x.classList.toggle("on", x === b));
+      app.querySelectorAll("[data-pal]").forEach((x) => x.classList.toggle("on", x.dataset.pal === draft.palette));
+      paint();
+    }));
+    app.querySelectorAll("[data-pal]").forEach((b) => b.addEventListener("click", () => {
+      draft.palette = b.dataset.pal;
+      app.querySelectorAll("[data-pal]").forEach((x) => x.classList.toggle("on", x === b));
+      paint();
+    }));
+    document.getElementById("f-photo").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      draft.photoFile = f;
+      const r = new FileReader();
+      r.onload = () => { draft.coverImageUrl = r.result; paintPhoto(); paint(); };
+      r.readAsDataURL(f);
+    });
+    document.getElementById("f-spots-minus").addEventListener("click", () => { draft.spots = Math.max(2, draft.spots - 5); document.getElementById("f-spots").textContent = draft.spots; paint(); });
+    document.getElementById("f-spots-plus").addEventListener("click", () => { draft.spots = Math.min(500, draft.spots + 5); document.getElementById("f-spots").textContent = draft.spots; paint(); });
+    document.getElementById("f-plus").addEventListener("change", (e) => { draft.allowPlusOne = e.target.checked; });
+    ["f-name", "f-desc", "f-date", "f-loc"].forEach((fid) =>
+      document.getElementById(fid).addEventListener("input", paint));
+    paintPhoto();
+    paint();
+
     app.querySelectorAll("[data-back]").forEach((b) =>
       b.addEventListener("click", () => go(id ? "#/event/" + id : "#/events")));
     document.getElementById("f-save").addEventListener("click", async () => {
@@ -974,10 +1111,25 @@
         name: val("f-name"), date: val("f-date"), rsvpDeadline: val("f-deadline"),
         location: val("f-loc"), description: val("f-desc"),
         nudgeAfterHours: Number(val("f-nudgeh")), nudgeMax: Number(val("f-nudgem")),
+        theme: draft.theme, palette: draft.palette,
+        spots: draft.spots, allowPlusOne: draft.allowPlusOne,
+        coverImageUrl: draft.coverImageUrl,
       };
       if (!data.name) return toast("Give your party a name", "err");
-      if (id) { await window.Api.updateEvent(id, data); toast("Saved", "ok"); go("#/event/" + id); }
-      else { const created = await window.Api.createEvent(data); toast("Party created", "ok"); go("#/event/" + created.id); }
+      const btn = document.getElementById("f-save");
+      btn.disabled = true;
+      try {
+        // Live backend: a data-URL photo is uploaded to storage first, so the
+        // event stores a small public URL (local preview keeps the data URL).
+        if (draft.photoFile && window.Api.uploadCover && window.Api.isBackendLive()) {
+          data.coverImageUrl = await window.Api.uploadCover(draft.photoFile);
+        }
+        if (id) { await window.Api.updateEvent(id, data); toast("Saved", "ok"); go("#/event/" + id); }
+        else { const created = await window.Api.createEvent(data); toast("Party created", "ok"); go("#/event/" + created.id); }
+      } catch (e) {
+        toast(e.message || "Couldn't save", "err");
+        btn.disabled = false;
+      }
     });
   }
 
@@ -1070,6 +1222,7 @@
           <p class="muted mt-8">${fmt(ev.date)}${ev.location ? " · " + esc(ev.location) : ""}</p>
         </div>
         <div class="row gap-8">
+          <button class="btn" data-preview>${icon("heart")} Preview as guest</button>
           <button class="btn" data-templates>${icon("sliders")} Messages</button>
           <button class="btn ghost" data-edit>${icon("pencil")} Edit</button>
           <div class="hdr-menu">
@@ -1110,6 +1263,14 @@
     app.querySelector("[data-back]").addEventListener("click", () => go("#/events"));
     app.querySelector("[data-edit]").addEventListener("click", () => go("#/event/" + id + "/edit"));
     app.querySelector("[data-templates]").addEventListener("click", () => go("#/event/" + id + "/templates.html"));
+    app.querySelector("[data-preview]").addEventListener("click", () => {
+      const mock = Object.assign({}, ev, { hostName: ev.hostName || (host && host.name) || "You", going: c.party });
+      modal({
+        title: "How guests see it",
+        body: `<div class="guest-preview-wrap">${invitePreviewHTML(mock)}</div>`,
+        actions: [{ label: "Close", cls: "primary", onClick: (close) => close() }],
+      });
+    });
     bindPartyGrid(); // wires the archive / restore / delete menu in the header
     document.getElementById("ev-add")?.addEventListener("click", () => addGuestsModal(id));
     document.getElementById("ev-add2")?.addEventListener("click", () => addGuestsModal(id));

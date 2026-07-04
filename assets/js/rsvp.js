@@ -26,37 +26,19 @@
   }
 
   /* ---- The invitation design ------------------------------------------- */
-  // Deterministic on-brand gradient per event (hash of the name), so every
-  // party gets its own look without any host setup. A cover photo, when the
-  // event has one, sits under a soft ink overlay instead.
-  const INV_GRADS = [
-    ["#E58AA9", "#b81e58"], ["#3E5C89", "#243763"], ["#F0C277", "#B4820E"],
-    ["#5BA77C", "#356E4D"], ["#9B5DE5", "#6B3FA0"], ["#3E8FD6", "#245b8f"],
-  ];
-  function invBackground(event) {
-    if (event.coverImageUrl) {
-      return `background:linear-gradient(rgba(21,34,63,.32),rgba(21,34,63,.55)),url('${esc(event.coverImageUrl)}') center/cover`;
-    }
-    let h = 0; const s = String(event.name || "party");
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    const [a, b] = INV_GRADS[h % INV_GRADS.length];
-    return `background:linear-gradient(135deg, ${a}, ${b})`;
-  }
-  function invConfetti() {
-    const colors = ["#FFD98E", "#ffffff", "#FFC7D6", "#9BE3B5", "#B7C7FF"];
-    return `<div class="inv-confetti" aria-hidden="true">${Array.from({ length: 14 }, (_, i) =>
-      `<span style="left:${(i * 7.3 + 3) % 96}%;background:${colors[i % colors.length]};
-        width:${6 + (i % 3) * 3}px;height:${6 + ((i + 1) % 3) * 3}px;
-        animation-duration:${5 + (i % 5)}s;animation-delay:${(i % 7) * 0.7}s"></span>`).join("")}</div>`;
-  }
-  function inviteBanner(event) {
-    const hostName = event.hostName || "Your host";
+  // Shared with the host's builder preview — see InviteDesign in ui.js.
+  // Hosts pick a theme + colour (stored on the event); a cover photo, when
+  // set, sits under a soft ink overlay. Older events fall back to the default
+  // confetti/blush look.
+  const inviteBanner = (event) => window.InviteDesign.banner(event, "h1");
+  function spotsBar(event) {
+    if (!event.spots) return "";
+    const going = Number(event.going) || 0;
+    const pct = Math.min(100, (going / event.spots) * 100);
     return `
-      <div class="inv-banner" style="${invBackground(event)}">
-        ${invConfetti()}
-        <span class="inv-kicker">You're invited!</span>
-        <h1 class="inv-title">${esc(event.name)}</h1>
-        <span class="inv-hostline"><span class="inv-host-av">${esc((hostName[0] || "♥").toUpperCase())}</span>Hosted by ${esc(hostName)}</span>
+      <div class="inv-spots mb-16">
+        <div class="progress"><i class="ok" style="width:${pct}%"></i></div>
+        <div class="inv-spots__txt"><span><b>${going}</b> going</span><span>${event.spots} spots</span></div>
       </div>`;
   }
 
@@ -73,6 +55,7 @@
             ${detail("location", event.location)}
           </div>
 
+          ${spotsBar(event)}
           ${event.description ? `<div class="host-note mb-16">${esc(event.description)}</div>` : ""}
 
           <div class="field mb-16">
@@ -84,9 +67,10 @@
           </div>
 
           <div id="extra" class="hide">
-            <div class="field-row mb-16">
+            <div class="${event.allowPlusOne === false ? "field" : "field-row"} mb-16">
+              ${event.allowPlusOne === false ? "" : `
               <div class="field"><span class="label">How many in your party?</span>
-                <input class="input" id="r-party" type="number" min="1" value="${guest.partySize || 1}"></div>
+                <input class="input" id="r-party" type="number" min="1" value="${guest.partySize || 1}"></div>`}
               <div class="field"><span class="label">Note to host <span class="faint">(optional)</span></span>
                 <input class="input" id="r-note" placeholder="Can't wait!"></div>
             </div>

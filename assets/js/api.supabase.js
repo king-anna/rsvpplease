@@ -37,6 +37,8 @@
     coverImageUrl: r.cover_image_url || "", nudgeAfterHours: r.nudge_after_hours,
     nudgeMax: r.nudge_max, status: r.status, paidAt: ts(r.paid_at),
     guestCountAtPayment: r.guest_count_at_payment, archived: !!r.archived,
+    theme: r.theme || "confetti", palette: r.palette || "blush",
+    spots: r.spots || null, allowPlusOne: r.allow_plus_one !== false,
     createdAt: ts(r.created_at) || 0,
     counts: countsFromGuests(r.guests),
   });
@@ -102,6 +104,9 @@
         event_date: d.date || null, location: d.location || "", rsvp_deadline: d.rsvpDeadline || null,
         nudge_after_hours: Number(d.nudgeAfterHours) || cfg.DEFAULT_NUDGE_AFTER_HOURS,
         nudge_max: Number(d.nudgeMax) || cfg.DEFAULT_NUDGE_MAX,
+        theme: d.theme || "confetti", palette: d.palette || "blush",
+        spots: Number(d.spots) || 40, allow_plus_one: d.allowPlusOne !== false,
+        cover_image_url: d.coverImageUrl || null,
       };
       const { data, error } = await sb.from("events").insert(row).select("*").single();
       if (error) throw error;
@@ -111,7 +116,8 @@
       const row = {};
       const map = { name: "name", description: "description", date: "event_date", location: "location",
         rsvpDeadline: "rsvp_deadline", nudgeAfterHours: "nudge_after_hours", nudgeMax: "nudge_max",
-        status: "status", coverImageUrl: "cover_image_url", archived: "archived" };
+        status: "status", coverImageUrl: "cover_image_url", archived: "archived",
+        theme: "theme", palette: "palette", spots: "spots", allowPlusOne: "allow_plus_one" };
       for (const k in map) if (k in p) row[map[k]] = (p[k] === "" && /date|deadline/i.test(k)) ? null : p[k];
       const { data, error } = await sb.from("events").update(row).eq("id", id)
         .select("*, guests(status, party_size)").single();
@@ -119,6 +125,17 @@
       return evFromRow(data);
     },
     async deleteEvent(id) { const { error } = await sb.from("events").delete().eq("id", id); if (error) throw error; },
+
+    // Cover photo → public 'covers' bucket; returns the public URL to store on the event.
+    async uploadCover(file) {
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) throw new Error("Sign in first");
+      const ext = (file.name || "img.jpg").split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from("covers").upload(path, file, { upsert: false, contentType: file.type || "image/jpeg" });
+      if (error) throw error;
+      return sb.storage.from("covers").getPublicUrl(path).data.publicUrl;
+    },
 
     /* Guests */
     async listGuests(id) {
@@ -133,7 +150,9 @@
       return {
         guest: { name: g.name, partySize: g.party_size, status: g.status, respondedAt: ts(g.responded_at), token },
         event: { name: ev.name, description: ev.description || "", date: ev.event_date || "",
-          location: ev.location || "", hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "" },
+          location: ev.location || "", hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "",
+          theme: ev.theme || "confetti", palette: ev.palette || "blush",
+          spots: ev.spots || null, allowPlusOne: ev.allow_plus_one !== false, going: Number(ev.going) || 0 },
       };
     },
     async addGuests(id, list) {

@@ -130,6 +130,11 @@
         rsvpDeadline: data.rsvpDeadline || "",
         nudgeAfterHours: Number(data.nudgeAfterHours) || cfg.DEFAULT_NUDGE_AFTER_HOURS,
         nudgeMax: Number(data.nudgeMax) || cfg.DEFAULT_NUDGE_MAX,
+        theme: data.theme || "confetti",
+        palette: data.palette || "blush",
+        spots: Number(data.spots) || 40,
+        allowPlusOne: data.allowPlusOne !== false,
+        coverImageUrl: data.coverImageUrl || "",
         templates: Object.assign({}, DEFAULT_TEMPLATES),
         status: "draft",
         paidAt: null,
@@ -167,7 +172,9 @@
       const db = window.Store.load();
       const guest = Object.values(db.guests).find((g) => g.token === token);
       if (!guest) return null;
-      return { guest, event: db.events[guest.eventId] || null };
+      const ev = db.events[guest.eventId] || null;
+      // `going` = confirmed heads incl. plus-ones — the guest page's spots bar.
+      return { guest, event: ev ? Object.assign({}, ev, { going: countsFor(ev.id, db).party }) : null };
     },
     async addGuests(eventId, list) {
       const db = window.Store.load();

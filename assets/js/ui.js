@@ -125,5 +125,54 @@
     );
   }
 
+  /* ---- Invite design (shared by the builder preview + guest RSVP page) -- */
+  const InviteDesign = {
+    PALETTES: {
+      blush: ["#E85C86", "#B03059"], marigold: ["#EE9B2E", "#B4690E"], sage: ["#5BA77C", "#356E4D"],
+      orchid: ["#9B5DE5", "#6B3FA0"], lagoon: ["#1FB0A6", "#0F7A73"], petal: ["#E58AA9", "#B86081"],
+      navy: ["#2F4A87", "#1B2E59"], berry: ["#C0397A", "#8E2458"], sky: ["#3E8FD6", "#245b8f"], plum: ["#7E57A8", "#553C75"],
+    },
+    THEMES: {
+      confetti: { label: "Confetti", palette: "blush",    dark: false, motif: "confetti", font: "'Bricolage Grotesque'" },
+      sunset:   { label: "Sunset",   palette: "marigold", dark: false, motif: "none",     font: "'Fredoka'" },
+      garden:   { label: "Garden",   palette: "sage",     dark: false, motif: "none",     font: "'Bricolage Grotesque'" },
+      bloom:    { label: "Bloom",    palette: "petal",    dark: false, motif: "confetti", font: "'Fredoka'" },
+      breeze:   { label: "Breeze",   palette: "lagoon",   dark: false, motif: "none",     font: "'Bricolage Grotesque'" },
+      bold:     { label: "Bold",     palette: "navy",     dark: false, motif: "none",     font: "'Space Grotesk'" },
+      elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "none",     font: "'DM Serif Display'", grad: ["#4a2d6b", "#15223F"] },
+      midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "none",     font: "'Space Grotesk'", grad: ["#15565a", "#15223F"] },
+      noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "none",     font: "'Bricolage Grotesque'", grad: ["#243763", "#15223F"] },
+    },
+    themeOf(event) { return this.THEMES[event.theme] || this.THEMES.confetti; },
+    background(event) {
+      if (event.coverImageUrl) {
+        return `background:linear-gradient(rgba(21,34,63,.32),rgba(21,34,63,.55)),url('${event.coverImageUrl.replace(/'/g, "%27")}') center/cover`;
+      }
+      const th = this.themeOf(event);
+      const [a, b] = th.dark ? th.grad : (this.PALETTES[event.palette] || this.PALETTES[th.palette]);
+      return `background:linear-gradient(135deg, ${a}, ${b})`;
+    },
+    confetti() {
+      const colors = ["#FFD98E", "#ffffff", "#FFC7D6", "#9BE3B5", "#B7C7FF"];
+      return `<div class="inv-confetti" aria-hidden="true">${Array.from({ length: 14 }, (_, i) =>
+        `<span style="left:${(i * 7.3 + 3) % 96}%;background:${colors[i % colors.length]};
+          width:${6 + (i % 3) * 3}px;height:${6 + ((i + 1) % 3) * 3}px;
+          animation-duration:${5 + (i % 5)}s;animation-delay:${(i % 7) * 0.7}s"></span>`).join("")}</div>`;
+    },
+    // The invitation banner. `tag` lets callers avoid a second h1 on dashboard pages.
+    banner(event, tag = "h1") {
+      const th = this.themeOf(event);
+      const hostName = event.hostName || "Your host";
+      return `
+        <div class="inv-banner" style="${this.background(event)}">
+          ${th.motif === "confetti" ? this.confetti() : ""}
+          <span class="inv-kicker">You're invited!</span>
+          <${tag} class="inv-title" style="font-family:${th.font},Georgia,serif">${esc(event.name || "Your party")}</${tag}>
+          <span class="inv-hostline"><span class="inv-host-av">${esc((hostName[0] || "♥").toUpperCase())}</span>Hosted by ${esc(hostName)}</span>
+        </div>`;
+    },
+  };
+  window.InviteDesign = InviteDesign;
+
   window.UI = { esc, el, icon, initials, money, relTime, toast, modal, confirmDialog, copy };
 })();
