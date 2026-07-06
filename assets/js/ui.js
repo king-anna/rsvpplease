@@ -132,16 +132,18 @@
       orchid: ["#9B5DE5", "#6B3FA0"], lagoon: ["#1FB0A6", "#0F7A73"], petal: ["#E58AA9", "#B86081"],
       navy: ["#2F4A87", "#1B2E59"], berry: ["#C0397A", "#8E2458"], sky: ["#3E8FD6", "#245b8f"], plum: ["#7E57A8", "#553C75"],
     },
+    // Each theme = its own font + a distinct animated motif. The colour comes
+    // from the selected palette (works for every theme, dark or light).
     THEMES: {
       confetti: { label: "Confetti", palette: "blush",    dark: false, motif: "confetti", font: "'Bricolage Grotesque'" },
-      sunset:   { label: "Sunset",   palette: "marigold", dark: false, motif: "none",     font: "'Fredoka'" },
-      garden:   { label: "Garden",   palette: "sage",     dark: false, motif: "none",     font: "'Bricolage Grotesque'" },
-      bloom:    { label: "Bloom",    palette: "petal",    dark: false, motif: "confetti", font: "'Fredoka'" },
-      breeze:   { label: "Breeze",   palette: "lagoon",   dark: false, motif: "none",     font: "'Bricolage Grotesque'" },
-      bold:     { label: "Bold",     palette: "navy",     dark: false, motif: "none",     font: "'Space Grotesk'" },
-      elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "none",     font: "'DM Serif Display'", grad: ["#4a2d6b", "#15223F"] },
-      midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "none",     font: "'Space Grotesk'", grad: ["#15565a", "#15223F"] },
-      noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "none",     font: "'Bricolage Grotesque'", grad: ["#243763", "#15223F"] },
+      sunset:   { label: "Sunset",   palette: "marigold", dark: false, motif: "sun",      font: "'Fredoka'" },
+      garden:   { label: "Garden",   palette: "sage",     dark: false, motif: "leaves",   font: "'Bricolage Grotesque'" },
+      bloom:    { label: "Bloom",    palette: "petal",    dark: false, motif: "petals",   font: "'Fredoka'" },
+      breeze:   { label: "Breeze",   palette: "lagoon",   dark: false, motif: "bubbles",  font: "'Bricolage Grotesque'" },
+      bold:     { label: "Bold",     palette: "navy",     dark: false, motif: "shine",    font: "'Space Grotesk'" },
+      elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "sparkles", font: "'DM Serif Display'" },
+      midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "stars",    font: "'Space Grotesk'" },
+      noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "shine",    font: "'Bricolage Grotesque'" },
     },
     themeOf(event) { return this.THEMES[event.theme] || this.THEMES.confetti; },
     background(event) {
@@ -149,23 +151,58 @@
         return `background:linear-gradient(rgba(21,34,63,.32),rgba(21,34,63,.55)),url('${event.coverImageUrl.replace(/'/g, "%27")}') center/cover`;
       }
       const th = this.themeOf(event);
-      const [a, b] = th.dark ? th.grad : (this.PALETTES[event.palette] || this.PALETTES[th.palette]);
-      return `background:linear-gradient(135deg, ${a}, ${b})`;
+      const [c1, c2] = this.PALETTES[event.palette] || this.PALETTES[th.palette];
+      // Dark themes blend the (darker) palette colour toward navy so the colour
+      // still shows through; light themes use the full palette gradient.
+      return th.dark
+        ? `background:linear-gradient(150deg, ${c2}, #15223F)`
+        : `background:linear-gradient(135deg, ${c1}, ${c2})`;
     },
+    /* ---- Animated motifs (one per theme) ---- */
     confetti() {
       const colors = ["#FFD98E", "#ffffff", "#FFC7D6", "#9BE3B5", "#B7C7FF"];
-      return `<div class="inv-confetti" aria-hidden="true">${Array.from({ length: 14 }, (_, i) =>
-        `<span style="left:${(i * 7.3 + 3) % 96}%;background:${colors[i % colors.length]};
-          width:${6 + (i % 3) * 3}px;height:${6 + ((i + 1) % 3) * 3}px;
-          animation-duration:${5 + (i % 5)}s;animation-delay:${(i % 7) * 0.7}s"></span>`).join("")}</div>`;
+      return `<div class="inv-motif inv-confetti" aria-hidden="true">${Array.from({ length: 14 }, (_, i) =>
+        `<span style="left:${(i * 7.3 + 3) % 96}%;background:${colors[i % colors.length]};width:${6 + (i % 3) * 3}px;height:${6 + ((i + 1) % 3) * 3}px;animation-duration:${5 + (i % 5)}s;animation-delay:${(i % 7) * 0.7}s"></span>`).join("")}</div>`;
+    },
+    petals() {
+      return `<div class="inv-motif inv-petals" aria-hidden="true">${Array.from({ length: 11 }, (_, i) =>
+        `<span style="left:${(i * 9 + 3) % 95}%;font-size:${13 + (i % 3) * 5}px;animation-duration:${6 + (i % 4)}s;animation-delay:${(i % 6) * 0.6}s">❀</span>`).join("")}</div>`;
+    },
+    leaves() {
+      return `<div class="inv-motif inv-leaves" aria-hidden="true">${Array.from({ length: 10 }, (_, i) =>
+        `<span style="left:${(i * 10 + 3) % 95}%;animation-duration:${7 + (i % 4)}s;animation-delay:${(i % 5) * 0.8}s"></span>`).join("")}</div>`;
+    },
+    sun() {
+      return `<div class="inv-motif inv-sun" aria-hidden="true"><span class="inv-sun__rays"></span><span class="inv-sun__disc"></span></div>`;
+    },
+    bubbles() {
+      return `<div class="inv-motif inv-bubbles" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => {
+        const s = 8 + (i % 4) * 5;
+        return `<span style="left:${(i * 8 + 3) % 96}%;width:${s}px;height:${s}px;animation-duration:${6 + (i % 5)}s;animation-delay:${(i % 6) * 0.7}s"></span>`;
+      }).join("")}</div>`;
+    },
+    sparkles() {
+      const pts = [[12, 24], [80, 18], [62, 58], [30, 70], [88, 50], [46, 30], [22, 46], [70, 38]];
+      const star = "M12 2C12.6 8.2 15.8 11.4 22 12C15.8 12.6 12.6 15.8 12 22C11.4 15.8 8.2 12.6 2 12C8.2 11.4 11.4 8.2 12 2Z";
+      return `<div class="inv-motif inv-sparkles" aria-hidden="true">${pts.map(([x, y], i) =>
+        `<svg viewBox="0 0 24 24" style="left:${x}%;top:${y}%;animation-delay:${i * 0.35}s"><path d="${star}"/></svg>`).join("")}</div>`;
+    },
+    stars() {
+      return `<div class="inv-motif inv-stars" aria-hidden="true">${Array.from({ length: 22 }, (_, i) =>
+        `<span style="left:${(i * 4.6 + 2) % 98}%;top:${(i * 13 + 5) % 88}%;animation-duration:${1.8 + (i % 5) * 0.5}s;animation-delay:${(i % 8) * 0.3}s"></span>`).join("")}</div>`;
+    },
+    shine() { return `<div class="inv-motif inv-shine" aria-hidden="true"></div>`; },
+    motifHTML(event) {
+      const m = this.themeOf(event).motif;
+      return typeof this[m] === "function" ? this[m]() : "";
     },
     // The invitation banner. `tag` lets callers avoid a second h1 on dashboard pages.
     banner(event, tag = "h1") {
       const th = this.themeOf(event);
       const hostName = event.hostName || "Your host";
       return `
-        <div class="inv-banner" style="${this.background(event)}">
-          ${th.motif === "confetti" ? this.confetti() : ""}
+        <div class="inv-banner${th.dark ? " inv-banner--dark" : ""}" style="${this.background(event)}">
+          ${this.motifHTML(event)}
           <span class="inv-kicker">You're invited!</span>
           <${tag} class="inv-title" style="font-family:${th.font},Georgia,serif">${esc(event.name || "Your party")}</${tag}>
           <span class="inv-hostline"><span class="inv-host-av">${esc((hostName[0] || "♥").toUpperCase())}</span>Hosted by ${esc(hostName)}</span>

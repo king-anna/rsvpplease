@@ -190,7 +190,7 @@
         const g = {
           id, eventId,
           name: (item.name || "").trim(),
-          phone: (item.phone || "").trim(),
+          phone: (item.phone || "").replace(/[^\d+]/g, "").replace(/(?!^)\+/g, ""),
           email: (item.email || "").trim(),
           channel: item.channel || ((item.email && !item.phone) ? "email" : "sms"),
           partySize: Number(item.partySize) || 1,

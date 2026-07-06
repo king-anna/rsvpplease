@@ -1099,13 +1099,49 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .inv-host-av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.65);
   display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;color:#fff;}
 .inv-body{padding:22px 24px 26px;}
-.inv-confetti{position:absolute;inset:0;pointer-events:none;}
+/* animated motifs — one per theme, all sit behind the banner content */
+.inv-motif{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.inv-banner > .inv-kicker,.inv-banner > .inv-title,.inv-banner > .inv-hostline{position:relative;z-index:1;}
+
+/* confetti */
 .inv-confetti span{position:absolute;top:-14px;border-radius:2px;opacity:.85;animation:inv-fall linear infinite;}
-@keyframes inv-fall{
-  from{transform:translateY(-16px) rotate(0deg);}
-  to{transform:translateY(300px) rotate(340deg);}
+@keyframes inv-fall{from{transform:translateY(-16px) rotate(0deg);}to{transform:translateY(320px) rotate(340deg);}}
+
+/* petals (falling flowers) & leaves — share the sway fall */
+.inv-petals span{position:absolute;top:-22px;color:rgba(255,255,255,.9);opacity:.9;line-height:1;animation:inv-fall-sway linear infinite;}
+.inv-leaves span{position:absolute;top:-16px;width:15px;height:9px;background:rgba(255,255,255,.5);border-radius:0 100% 0 100%;animation:inv-fall-sway linear infinite;}
+@keyframes inv-fall-sway{
+  0%{transform:translate(0,-22px) rotate(0deg);}
+  50%{transform:translate(16px,150px) rotate(180deg);}
+  100%{transform:translate(-8px,320px) rotate(360deg);}
 }
-@media (prefers-reduced-motion:reduce){.inv-confetti{display:none;}}
+
+/* sunset — glowing sun + slow rotating rays, top-right */
+.inv-sun__disc{position:absolute;top:-34px;right:-20px;width:110px;height:110px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,244,205,.95),rgba(255,224,150,.15) 70%);animation:inv-pulse 4s ease-in-out infinite;}
+.inv-sun__rays{position:absolute;top:-90px;right:-80px;width:230px;height:230px;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(255,240,190,.20) 0 5deg,transparent 5deg 30deg);animation:inv-spin 30s linear infinite;}
+@keyframes inv-spin{to{transform:rotate(360deg);}}
+@keyframes inv-pulse{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.06);}}
+
+/* breeze — rising bubbles */
+.inv-bubbles span{position:absolute;bottom:-26px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.32);animation:inv-rise linear infinite;}
+@keyframes inv-rise{0%{transform:translateY(0);opacity:0;}15%{opacity:.85;}100%{transform:translateY(-270px);opacity:0;}}
+
+/* elegant — twinkling sparkles */
+.inv-sparkles svg{position:absolute;width:17px;height:17px;fill:rgba(255,255,255,.92);animation:inv-twinkle 2.4s ease-in-out infinite;}
+@keyframes inv-twinkle{0%,100%{opacity:.12;transform:scale(.55);}50%{opacity:1;transform:scale(1);}}
+
+/* midnight — field of twinkling stars */
+.inv-stars span{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 4px rgba(255,255,255,.8);animation:inv-blink ease-in-out infinite;}
+@keyframes inv-blink{0%,100%{opacity:.2;}50%{opacity:1;}}
+
+/* bold / noir — a diagonal light sweep */
+.inv-shine::before{content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;transform:skewX(-18deg);
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);animation:inv-sweep 5s ease-in-out infinite;}
+@keyframes inv-sweep{0%{left:-60%;}55%,100%{left:135%;}}
+
+@media (prefers-reduced-motion:reduce){.inv-motif,.inv-motif *{animation:none!important;}.inv-shine::before{display:none;}}
 
 /* ===== Blog (marketing · webhook-fed posts) ===== */
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));gap:26px;}

@@ -1462,7 +1462,9 @@
             if (owedExtra === 0) {
               try {
                 const r = await window.Api.sendInvites(eventId);
-                toast(r.sent ? `Added — texted ${r.sent} new invite${r.sent === 1 ? "" : "s"}` : `Added ${list.length} guest${list.length === 1 ? "" : "s"}`, "ok");
+                if (r.sent) toast(`Added — texted ${r.sent} new invite${r.sent === 1 ? "" : "s"}`, "ok");
+                else if (r.errors && r.errors.length) toast(`Added, but couldn't text: ${r.errors[0]}`, "err");
+                else toast(`Added — no invite sent (add a mobile number to text them)`, "err");
               } catch (e) { toast(`Added, but couldn't send: ${e.message || "error"}`, "err"); }
               render(); return;
             }

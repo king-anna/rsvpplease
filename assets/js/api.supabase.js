@@ -188,9 +188,12 @@
       };
     },
     async addGuests(id, list) {
+      // Normalise phones to E.164-ish (strip spaces/()/- ) so outbound SMS and
+      // inbound matching both work; keep a leading +.
+      const normPhone = (p) => (p || "").replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "") || null;
       const rows = list.map((it) => ({
         event_id: id, name: (it.name || "").trim(),
-        phone: (it.phone || "").trim() || null, email: (it.email || "").trim() || null,
+        phone: normPhone(it.phone), email: (it.email || "").trim() || null,
         channel: it.channel || (it.email && !it.phone ? "email" : "sms"),
         party_size: Number(it.partySize) || 1,
       }));
@@ -264,7 +267,7 @@
       const { data, error } = await sb.functions.invoke("send-invites", { body: { event_id: id } });
       if (error) throw error;
       if (data && data.error) throw new Error(data.error);
-      return { sent: (data && data.sent) || 0 };
+      return { sent: (data && data.sent) || 0, errors: (data && data.errors) || [] };
     },
     async sendNudge(gid) {
       const { error } = await sb.functions.invoke("send-nudges", { body: { guest_id: gid } });
