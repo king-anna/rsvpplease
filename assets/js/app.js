@@ -1561,7 +1561,7 @@
         <div class="drawer-body">${thread}</div>
         <div class="drawer-foot">
           ${g.invitedAt ? `<button class="btn soft block mb-8" data-nudge>${icon("bell")} Send a nudge</button>` : ""}
-          <p class="help mb-8">${window.Api.isBackendLive() ? "Replies arrive here automatically via Twilio." : "Simulate an inbound reply (Phase 2: real Twilio SMS):"}</p>
+          <p class="help mb-8">${window.Api.isBackendLive() ? "Replies arrive here automatically." : "Simulate an inbound reply:"}</p>
           <div class="row gap-8">
             <button class="btn sm" data-reply="confirmed" style="flex:1">Reply “YES”</button>
             <button class="btn sm" data-reply="declined" style="flex:1">Reply “NO”</button>
