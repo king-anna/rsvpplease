@@ -1015,7 +1015,7 @@
             <div class="field"><span class="label">How many can come?</span>
               <div class="stepper">
                 <button type="button" id="f-spots-minus" aria-label="fewer">−</button>
-                <b id="f-spots">${draft.spots}</b>
+                <input class="stepper__num" id="f-spots" type="number" inputmode="numeric" min="1" max="1000" value="${draft.spots}" aria-label="Number of spots">
                 <button type="button" id="f-spots-plus" aria-label="more">+</button>
                 <span class="muted" style="font-size:.82rem">spots</span>
               </div></div>
@@ -1096,8 +1096,12 @@
       r.onload = () => { draft.coverImageUrl = r.result; paintPhoto(); paint(); };
       r.readAsDataURL(f);
     });
-    document.getElementById("f-spots-minus").addEventListener("click", () => { draft.spots = Math.max(2, draft.spots - 5); document.getElementById("f-spots").textContent = draft.spots; paint(); });
-    document.getElementById("f-spots-plus").addEventListener("click", () => { draft.spots = Math.min(500, draft.spots + 5); document.getElementById("f-spots").textContent = draft.spots; paint(); });
+    const spotsInput = document.getElementById("f-spots");
+    const setSpots = (n) => { draft.spots = Math.max(1, Math.min(1000, n || 1)); spotsInput.value = draft.spots; paint(); };
+    document.getElementById("f-spots-minus").addEventListener("click", () => setSpots(draft.spots - 1));
+    document.getElementById("f-spots-plus").addEventListener("click", () => setSpots(draft.spots + 1));
+    spotsInput.addEventListener("input", () => { const n = parseInt(spotsInput.value, 10); if (!isNaN(n)) { draft.spots = Math.min(1000, Math.max(1, n)); paint(); } });
+    spotsInput.addEventListener("blur", () => setSpots(parseInt(spotsInput.value, 10)));
     document.getElementById("f-plus").addEventListener("change", (e) => { draft.allowPlusOne = e.target.checked; });
     ["f-name", "f-desc", "f-date", "f-loc"].forEach((fid) =>
       document.getElementById(fid).addEventListener("input", paint));
