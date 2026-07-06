@@ -6,6 +6,11 @@ export async function sendSms(to: string, body: string): Promise<string> {
   const token = env("TWILIO_AUTH_TOKEN");
   const from = env("TWILIO_PHONE_NUMBER");
 
+  // Twilio needs E.164 — strip any spaces / () / - a host may have entered, and
+  // keep only a single leading +. (Belt-and-braces: the app already normalises
+  // on add, but this covers guests saved before that.)
+  const dest = (to || "").replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+
   const res = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
     {
@@ -14,7 +19,7 @@ export async function sendSms(to: string, body: string): Promise<string> {
         Authorization: "Basic " + btoa(`${sid}:${token}`),
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: to, From: from, Body: body }),
+      body: new URLSearchParams({ To: dest, From: from, Body: body }),
     },
   );
   const data = await res.json();

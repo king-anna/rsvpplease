@@ -1426,6 +1426,18 @@
       </div>
       <p class="help mt-8">Phones in international format (+countrycode). Channel sets how each guest is invited — pasted rows auto-detect phone vs email.</p>
     </div>`);
+    // Clean the single-guest phone field as the host types or pastes — strip
+    // spaces, brackets and dashes so what we store is always a Twilio-ready
+    // number (a stray space is enough to make the text silently fail to send).
+    const phoneEl = body.querySelector("#g-phone");
+    if (phoneEl) phoneEl.addEventListener("input", () => {
+      const cleaned = phoneEl.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+      if (cleaned !== phoneEl.value) {
+        const atEnd = phoneEl.selectionStart === phoneEl.value.length;
+        phoneEl.value = cleaned;
+        if (atEnd) phoneEl.setSelectionRange(cleaned.length, cleaned.length);
+      }
+    });
     modal({
       title: "Add guests",
       body,
@@ -1579,12 +1591,8 @@
         </div>
         <div class="drawer-body">${thread}</div>
         <div class="drawer-foot">
-          ${g.invitedAt ? `<button class="btn soft block mb-8" data-nudge>${icon("bell")} Send a nudge</button>` : ""}
-          <p class="help mb-8">${window.Api.isBackendLive() ? "Replies arrive here automatically." : "Simulate an inbound reply:"}</p>
-          <div class="row gap-8">
-            <button class="btn sm" data-reply="confirmed" style="flex:1">Reply “YES”</button>
-            <button class="btn sm" data-reply="declined" style="flex:1">Reply “NO”</button>
-          </div>
+          ${g.invitedAt ? `<button class="btn soft block" data-nudge>${icon("bell")} Send a nudge</button>` : ""}
+          <p class="help mt-8">Your guest replies to the text on their own phone — their answer lands here automatically.</p>
         </div>
       </aside>`);
     overlay.appendChild(drawer);
@@ -1597,10 +1605,6 @@
     overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
     drawer.querySelector("[data-close]").addEventListener("click", close);
     drawer.querySelector("[data-nudge]")?.addEventListener("click", async () => { await window.Api.sendNudge(guestId); close(); toast("Nudge sent", "ok"); render(); });
-    drawer.querySelectorAll("[data-reply]").forEach((b) => b.addEventListener("click", async () => {
-      await window.Api.recordRsvp(g.token, { status: b.dataset.reply, viaSms: true });
-      close(); toast(b.dataset.reply === "confirmed" ? "Marked confirmed · auto-reply sent" : "Marked declined · auto-reply sent", "ok"); render();
-    }));
   }
 
   /* ===================================================================== */
