@@ -31,16 +31,6 @@
   // set, sits under a soft ink overlay. Older events fall back to the default
   // confetti/blush look.
   const inviteBanner = (event) => window.InviteDesign.banner(event, "h1");
-  function spotsBar(event) {
-    if (!event.spots) return "";
-    const going = Number(event.going) || 0;
-    const pct = Math.min(100, (going / event.spots) * 100);
-    return `
-      <div class="inv-spots mb-16">
-        <div class="progress"><i class="ok" style="width:${pct}%"></i></div>
-        <div class="inv-spots__txt"><span><b>${going}</b> going</span><span>${event.spots} spots</span></div>
-      </div>`;
-  }
 
   function renderInvite(guest, event) {
     let choice = null;
@@ -55,7 +45,6 @@
             ${detail("location", event.location)}
           </div>
 
-          ${spotsBar(event)}
           ${event.description ? `<div class="host-note mb-16">${esc(event.description)}</div>` : ""}
 
           <div class="field mb-16">

@@ -1016,8 +1016,6 @@
   // preview and the "Preview as guest" modal on the party page.
   function invitePreviewHTML(ev, opts = {}) {
     const D = window.InviteDesign;
-    const going = Number(ev.going) || 0;
-    const spots = Number(ev.spots) || 0;
     const detail = (ic, text) => text ? `<div class="detail-line">${icon(ic)}<span>${esc(text)}</span></div>` : "";
     return `
       <div class="card invite ticket pad0" style="width:100%">
@@ -1028,11 +1026,6 @@
             ${detail("calendar", ev.date ? fmt(ev.date) : "Date TBD")}
             ${detail("location", ev.location || "Location TBD")}
           </div>
-          ${spots ? `
-            <div class="inv-spots mb-16">
-              <div class="progress"><i class="ok" style="width:${Math.min(100, (going / spots) * 100)}%"></i></div>
-              <div class="inv-spots__txt"><span><b>${going}</b> going</span><span>${spots} spots</span></div>
-            </div>` : ""}
           ${ev.description ? `<div class="host-note mb-16">${esc(ev.description)}</div>` : ""}
           <div class="big-choice" style="pointer-events:none">
             <span class="choice yes"><span class="choice__ic">${icon("heart")}</span><span class="big">Yes</span><span class="choice__sub">Count me in</span></span>
