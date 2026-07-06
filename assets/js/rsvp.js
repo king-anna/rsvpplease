@@ -61,8 +61,16 @@
           <div class="field mb-16">
             <span class="label">Will you be there?</span>
             <div class="big-choice">
-              <button class="choice yes" data-c="confirmed"><span class="big">Yes ${icon("heart")}</span>Count me in</button>
-              <button class="choice no" data-c="declined"><span class="big">Can't make it</span>Maybe next time</button>
+              <button class="choice yes" data-c="confirmed">
+                <span class="choice__ic">${icon("heart")}</span>
+                <span class="big">Yes</span>
+                <span class="choice__sub">Count me in</span>
+              </button>
+              <button class="choice no" data-c="declined">
+                <span class="choice__ic">${icon("x")}</span>
+                <span class="big">Can't make it</span>
+                <span class="choice__sub">Maybe next time</span>
+              </button>
             </div>
           </div>
 

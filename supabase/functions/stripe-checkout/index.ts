@@ -43,29 +43,24 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true }).eq("event_id", event_id);
     const guestCount = count ?? 0;
 
-    // Live-mode Stripe Price IDs (one-time). Overridable via env; defaults are
-    // the products you created. Base = $10; Extra = $1 per person.
-    const basePrice = Deno.env.get("STRIPE_PRICE_BASE") || "price_1To0F0L3t6lGRaBqic1AbuER";
-    const extraPrice = Deno.env.get("STRIPE_PRICE_EXTRA") || "price_1To0FJL3t6lGRaBqNN9syoTe";
+    // Stripe Price IDs (one-time) — live and test each have their own $10 base
+    // and $1 extra-guest Price. Overridable via env; defaults are the products
+    // in the Stripe account. Test IDs are used only for admins (isTest).
+    const basePrice = isTest
+      ? (Deno.env.get("STRIPE_PRICE_BASE_TEST") || "price_1Tq5k6L3t6lGRaBqGZ9CHITQ")
+      : (Deno.env.get("STRIPE_PRICE_BASE") || "price_1To0F0L3t6lGRaBqic1AbuER");
+    const extraPrice = isTest
+      ? (Deno.env.get("STRIPE_PRICE_EXTRA_TEST") || "price_1Tq5kwL3t6lGRaBq6d6uES3M")
+      : (Deno.env.get("STRIPE_PRICE_EXTRA") || "price_1To0FJL3t6lGRaBqNN9syoTe");
 
     // `BASE_INCLUDED` guests are covered by the one-time base fee; everyone
-    // beyond that is billed per head.
+    // beyond that is billed per head. (cents used only for the payments record.)
     const included = Number(Deno.env.get("STRIPE_BASE_INCLUDED") ?? 10);
     const base = Number(Deno.env.get("PRICE_BASE_CENTS") ?? 1000);
     const per = Number(Deno.env.get("PRICE_PER_GUEST_CENTS") ?? 100);
 
-    // Line-item builders: live mode uses the real Price IDs; test mode builds
-    // ad-hoc price_data with the same amounts.
-    const baseItem = (): Stripe.Checkout.SessionCreateParams.LineItem =>
-      isTest
-        ? { price_data: { currency: "usd", unit_amount: base,
-            product_data: { name: `RSVPplease — party base (up to ${included} guests)` } }, quantity: 1 }
-        : { price: basePrice, quantity: 1 };
-    const extraItem = (qty: number): Stripe.Checkout.SessionCreateParams.LineItem =>
-      isTest
-        ? { price_data: { currency: "usd", unit_amount: per,
-            product_data: { name: "RSVPplease — extra guest" } }, quantity: qty }
-        : { price: extraPrice, quantity: qty };
+    const baseItem = (): Stripe.Checkout.SessionCreateParams.LineItem => ({ price: basePrice, quantity: 1 });
+    const extraItem = (qty: number): Stripe.Checkout.SessionCreateParams.LineItem => ({ price: extraPrice, quantity: qty });
 
     // First payment charges the base + $1 for every guest beyond `included`.
     // A later payment (guests added after the event was already paid for) is a

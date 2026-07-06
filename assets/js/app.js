@@ -953,8 +953,8 @@
             </div>` : ""}
           ${ev.description ? `<div class="host-note mb-16">${esc(ev.description)}</div>` : ""}
           <div class="big-choice" style="pointer-events:none">
-            <span class="choice yes"><span class="big">Yes ${icon("heart")}</span>Count me in</span>
-            <span class="choice no"><span class="big">Can't make it</span>Maybe next time</span>
+            <span class="choice yes"><span class="choice__ic">${icon("heart")}</span><span class="big">Yes</span><span class="choice__sub">Count me in</span></span>
+            <span class="choice no"><span class="choice__ic">${icon("x")}</span><span class="big">Can't make it</span><span class="choice__sub">Maybe next time</span></span>
           </div>
         </div>
       </div>`;
