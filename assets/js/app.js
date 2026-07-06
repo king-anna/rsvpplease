@@ -1445,7 +1445,31 @@
           });
           if (!list.length) return toast("Add at least one guest", "err");
           await window.Api.addGuests(eventId, list);
-          c(); toast(`Added ${list.length} guest${list.length === 1 ? "" : "s"}`, "ok"); render();
+          c();
+
+          // On an SMS-active (or comped) party, text the new guests right away.
+          // Exception: if they push the guest list past the paid allowance, a
+          // $1-per-head top-up is owed first — open billing instead of sending
+          // for free.
+          const ev = await window.Api.getEvent(eventId);
+          const active = !!ev.paidAt || (host && host.comped);
+          if (active) {
+            const guests = await window.Api.listGuests(eventId);
+            const p0 = window.Api.priceFor(0);
+            const paidCount = ev.guestCountAtPayment || 0;
+            const owedExtra = (host && host.comped) ? 0
+              : Math.max(0, Math.max(0, guests.length - p0.included) - Math.max(0, paidCount - p0.included));
+            if (owedExtra === 0) {
+              try {
+                const r = await window.Api.sendInvites(eventId);
+                toast(r.sent ? `Added — texted ${r.sent} new invite${r.sent === 1 ? "" : "s"}` : `Added ${list.length} guest${list.length === 1 ? "" : "s"}`, "ok");
+              } catch (e) { toast(`Added, but couldn't send: ${e.message || "error"}`, "err"); }
+              render(); return;
+            }
+            toast(`Added — activate SMS to text ${owedExtra} guest${owedExtra === 1 ? "" : "s"} beyond your first ${p0.included}`, "ok");
+            render(); billingModal(eventId); return;
+          }
+          toast(`Added ${list.length} guest${list.length === 1 ? "" : "s"}`, "ok"); render();
         } },
       ],
     });
