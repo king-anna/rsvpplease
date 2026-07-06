@@ -1220,9 +1220,8 @@
       <button class="crumb" data-back>${icon("chevronLeft")} All parties</button>
       <div class="page-head">
         <div>
-          <div class="row gap-8">${dateChip(ev.date)}
-            <div><div style="margin-bottom:5px">${partyStatusPill(ev)}</div><h1 style="margin-top:2px">${esc(ev.name)}</h1></div>
-          </div>
+          <div style="margin-bottom:6px">${partyStatusPill(ev)}</div>
+          <h1 style="margin-top:2px">${esc(ev.name)}</h1>
           <p class="muted mt-8">${fmt(ev.date)}${ev.location ? " · " + esc(ev.location) : ""}</p>
         </div>
         <div class="row gap-8">
