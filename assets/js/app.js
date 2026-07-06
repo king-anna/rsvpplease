@@ -1408,7 +1408,7 @@
         <span class="label">Add one guest</span>
         <input class="input" id="g-name" placeholder="Full name" style="margin-bottom:8px">
         <div class="field-row" style="grid-template-columns:1fr 1fr">
-          <input class="input" id="g-phone" type="tel" placeholder="+1 555 123 4567">
+          <input class="input" id="g-phone" type="tel" inputmode="tel" placeholder="+15551234567">
           <input class="input" id="g-email" type="email" placeholder="guest@email.com">
         </div>
         <div class="field-row" style="grid-template-columns:1fr 1fr;margin-top:8px">
@@ -1427,17 +1427,25 @@
       <p class="help mt-8">Phones in international format (+countrycode). Channel sets how each guest is invited — pasted rows auto-detect phone vs email.</p>
     </div>`);
     // Clean the single-guest phone field as the host types or pastes — strip
-    // spaces, brackets and dashes so what we store is always a Twilio-ready
-    // number (a stray space is enough to make the text silently fail to send).
+    // spaces, brackets and dashes and force a single leading "+" so what we
+    // store is always a Twilio-ready E.164 number (a stray space, or a missing
+    // country-code "+", is enough to make the text silently fail to send).
     const phoneEl = body.querySelector("#g-phone");
-    if (phoneEl) phoneEl.addEventListener("input", () => {
-      const cleaned = phoneEl.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
-      if (cleaned !== phoneEl.value) {
-        const atEnd = phoneEl.selectionStart === phoneEl.value.length;
-        phoneEl.value = cleaned;
-        if (atEnd) phoneEl.setSelectionRange(cleaned.length, cleaned.length);
-      }
-    });
+    if (phoneEl) {
+      const cleanPhone = (v) => {
+        let s = v.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+        if (s && s[0] !== "+") s = "+" + s;   // + is required
+        return s;
+      };
+      phoneEl.addEventListener("input", () => {
+        const cleaned = cleanPhone(phoneEl.value);
+        if (cleaned !== phoneEl.value) {
+          const atEnd = phoneEl.selectionStart === phoneEl.value.length;
+          phoneEl.value = cleaned;
+          if (atEnd) phoneEl.setSelectionRange(cleaned.length, cleaned.length);
+        }
+      });
+    }
     modal({
       title: "Add guests",
       body,

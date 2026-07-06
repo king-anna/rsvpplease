@@ -57,26 +57,35 @@ Deno.serve(async (req) => {
 
   const db = adminClient();
 
-  // Exact match on the stored number, most recently invited first.
-  let guest: Record<string, any> | null = null;
+  // Gather EVERY invited guest row for this number (a person can be invited to
+  // more than one party from the same phone), newest invite first.
+  const target = phoneKey(from);
+  let candidates: Record<string, any>[] = [];
   {
-    const { data } = await db.from("guests")
+    const { data: exact } = await db.from("guests")
       .select("*, events(*)").eq("phone", from).not("invited_at", "is", null)
-      .order("invited_at", { ascending: false }).limit(1).maybeSingle();
-    guest = data as Record<string, any> | null;
-  }
-  // Fallback: numbers stored with spaces/() won't match exactly — compare digits.
-  if (!guest) {
-    const target = phoneKey(from);
-    const { data: rows } = await db.from("guests")
-      .select("*, events(*)").not("phone", "is", null).not("invited_at", "is", null)
-      .order("invited_at", { ascending: false }).limit(500);
-    guest = (rows || []).find((g: Record<string, any>) => phoneKey(g.phone) === target) || null;
-    if (guest) console.log("matched guest by digit-normalised phone:", guest.phone);
+      .order("invited_at", { ascending: false }).limit(50);
+    candidates = (exact || []) as Record<string, any>[];
+    // Fallback: numbers stored with spaces/() won't match exactly — compare digits.
+    if (!candidates.length) {
+      const { data: rows } = await db.from("guests")
+        .select("*, events(*)").not("phone", "is", null).not("invited_at", "is", null)
+        .order("invited_at", { ascending: false }).limit(1000);
+      candidates = ((rows || []) as Record<string, any>[]).filter((g) => phoneKey(g.phone) === target);
+      if (candidates.length) console.log("matched by digit-normalised phone:", candidates[0].phone);
+    }
   }
 
-  if (!guest) { console.log("no invited guest found for", from, "— check the number is stored in E.164 (+1…)"); return twiml(""); }
-  const event = (guest as Record<string, any>).events;
+  if (!candidates.length) { console.log("no invited guest found for", from, "— check the number is stored in E.164 (+1…)"); return twiml(""); }
+
+  // If they were invited to several parties, their reply belongs to the one
+  // still waiting on them — the most recently invited party they haven't
+  // answered yet. If they've answered them all, fall back to the newest invite
+  // (so a change of mind still lands somewhere sensible).
+  const responded = (g: Record<string, any>) => g.status === "confirmed" || g.status === "declined" || !!g.responded_at;
+  const guest = candidates.find((g) => !responded(g)) || candidates[0];
+  const event = guest.events;
+  if (candidates.length > 1) console.log(`phone maps to ${candidates.length} invites; routing reply to event`, event?.id, event?.name);
   console.log("matched guest", guest.id, "event", event?.id, event?.name);
 
   // Log the inbound text.
@@ -87,10 +96,45 @@ Deno.serve(async (req) => {
 
   const isYes = YES.test(text);
   const isNo = NO.test(text);
+  const alreadyResponded = responded(guest);
+
+  // Best-effort host notification — used both for a first reply and a later
+  // change of mind.
+  const notifyHost = async (hostEmail: string | undefined, status: string) => {
+    try {
+      if (hostEmail) {
+        await sendEmail(
+          hostEmail,
+          `${guest.name} ${status === "confirmed" ? "is coming 🎉" : "can't make it"} — ${event.name}`,
+          `${guest.name} just replied "${text}" and is now ${status} for ${event.name}.`,
+        );
+      }
+    } catch (_) { /* notification failures shouldn't break the reply */ }
+  };
+
   if (!isYes && !isNo) {
+    // Don't nag a guest who has already answered with a follow-up ("thanks!").
+    if (alreadyResponded) { console.log("chit-chat after reply — staying quiet for guest", guest.id); return twiml(""); }
     return twiml(`Thanks! Could you reply YES if you can make ${event.name}, or NO if you can't?`);
   }
+
   const status = isYes ? "confirmed" : "declined";
+
+  // Already replied to this party: record a genuine change of mind so the host
+  // sees it, but DON'T text back again — auto-replies are one-per-guest.
+  if (alreadyResponded) {
+    if (status !== guest.status) {
+      await db.from("guests").update({ status, responded_at: new Date().toISOString() }).eq("id", guest.id);
+      const { data: hu } = await db.auth.admin.getUserById(event.host_id);
+      await notifyHost(hu?.user?.email, status);
+      console.log("updated change-of-mind to", status, "for guest", guest.id, "(no auto-reply)");
+    } else {
+      console.log("repeat reply, same answer — no action for guest", guest.id);
+    }
+    return twiml("");
+  }
+
+  // First reply from this guest: record it and send the one auto-reply.
   await db.from("guests").update({ status, responded_at: new Date().toISOString() }).eq("id", guest.id);
   console.log("recorded", status, "for guest", guest.id);
 
@@ -110,17 +154,7 @@ Deno.serve(async (req) => {
     direction: "out", kind: replyKey, body: reply,
   });
 
-  // Best-effort host notification email.
-  try {
-    const hostEmail = hostUser?.user?.email;
-    if (hostEmail) {
-      await sendEmail(
-        hostEmail,
-        `${guest.name} ${isYes ? "is coming 🎉" : "can't make it"} — ${event.name}`,
-        `${guest.name} just replied "${text}" and is now ${status} for ${event.name}.`,
-      );
-    }
-  } catch (_) { /* notification failures shouldn't break the reply */ }
+  await notifyHost(hostUser?.user?.email, status);
 
   return twiml(reply);
 });

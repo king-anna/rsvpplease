@@ -144,6 +144,10 @@
       elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "sparkles", font: "'DM Serif Display'" },
       midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "stars",    font: "'Space Grotesk'" },
       noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "shine",    font: "'Bricolage Grotesque'" },
+      hearts:   { label: "Hearts",   palette: "berry",    dark: false, motif: "hearts",   font: "'Fredoka'" },
+      cars:     { label: "Cars",     palette: "sky",      dark: false, motif: "cars",     font: "'Space Grotesk'" },
+      dinos:    { label: "Dinosaurs",palette: "sage",     dark: false, motif: "dinos",    font: "'Fredoka'" },
+      fairytale:{ label: "Fairytale",palette: "orchid",   dark: false, motif: "fairytale",font: "'DM Serif Display'" },
     },
     themeOf(event) { return this.THEMES[event.theme] || this.THEMES.confetti; },
     background(event) {
@@ -192,6 +196,26 @@
         `<span style="left:${(i * 4.6 + 2) % 98}%;top:${(i * 13 + 5) % 88}%;animation-duration:${1.8 + (i % 5) * 0.5}s;animation-delay:${(i % 8) * 0.3}s"></span>`).join("")}</div>`;
     },
     shine() { return `<div class="inv-motif inv-shine" aria-hidden="true"></div>`; },
+    hearts() {
+      const hs = ["💗", "💖", "❤️", "💕", "💘", "💞"];
+      return `<div class="inv-motif inv-hearts" aria-hidden="true">${Array.from({ length: 13 }, (_, i) =>
+        `<span style="left:${(i * 7.7 + 3) % 95}%;font-size:${15 + (i % 3) * 8}px;animation-duration:${5 + (i % 4)}s;animation-delay:${(i % 7) * 0.7}s">${hs[i % hs.length]}</span>`).join("")}</div>`;
+    },
+    cars() {
+      const cs = ["🚗", "🏎️", "🚙", "🚕", "🚐", "🚓"];
+      return `<div class="inv-motif inv-cars" aria-hidden="true">${Array.from({ length: 6 }, (_, i) =>
+        `<span style="top:${9 + i * 15}%;font-size:${22 + (i % 3) * 6}px;animation-duration:${6 + (i % 4) * 2}s;animation-delay:${i * 1.1}s">${cs[i % cs.length]}</span>`).join("")}</div>`;
+    },
+    dinos() {
+      const ds = ["🦕", "🦖", "🦕", "🦖"];
+      return `<div class="inv-motif inv-dinos" aria-hidden="true">${Array.from({ length: 8 }, (_, i) =>
+        `<span style="left:${(i * 12 + 4) % 90}%;bottom:${(i % 3) * 9}px;font-size:${22 + (i % 3) * 9}px;animation-duration:${1.5 + (i % 4) * 0.4}s;animation-delay:${(i % 5) * 0.5}s">${ds[i % ds.length]}</span>`).join("")}</div>`;
+    },
+    fairytale() {
+      const fs = ["✨", "🦄", "⭐", "💫", "🏰", "🌙", "🧚", "🌟"];
+      return `<div class="inv-motif inv-fairytale" aria-hidden="true">${Array.from({ length: 12 }, (_, i) =>
+        `<span style="left:${(i * 8.5 + 3) % 95}%;top:${(i * 17 + 6) % 82}%;font-size:${15 + (i % 3) * 7}px;animation-duration:${3 + (i % 4)}s;animation-delay:${(i % 6) * 0.5}s">${fs[i % fs.length]}</span>`).join("")}</div>`;
+    },
     motifHTML(event) {
       const m = this.themeOf(event).motif;
       return typeof this[m] === "function" ? this[m]() : "";
