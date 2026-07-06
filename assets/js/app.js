@@ -35,7 +35,7 @@
           <a href="#/events" class="wordmark" style="text-decoration:none">
             RSVP<b>please</b><span class="dot">.</span>
           </a>
-          <span class="pill rose" title="Phase 1 — front-end preview using your own local data">front-end preview</span>
+          ${window.Api.isBackendLive() ? "" : `<span class="pill rose" title="Local preview — data lives only in this browser">preview mode</span>`}
           <nav class="nav">
             ${a("events", "Parties", "calendar")}
             ${a("inbox", "Activity", "inbox")}
