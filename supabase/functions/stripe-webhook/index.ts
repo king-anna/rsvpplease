@@ -15,14 +15,18 @@ const cryptoProvider = Stripe.createSubtleCryptoProvider();
 Deno.serve(async (req) => {
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
-  let evt: Stripe.Event;
-  try {
-    evt = await stripe.webhooks.constructEventAsync(
-      raw, sig!, env("STRIPE_WEBHOOK_SECRET"), undefined, cryptoProvider,
-    );
-  } catch (e) {
-    return new Response(`bad signature: ${(e as Error).message}`, { status: 400 });
+  let evt: Stripe.Event | null = null;
+  // Admins pay through Stripe TEST mode, whose webhook endpoint signs with its
+  // own secret — verify against live first, then test (if configured).
+  const secrets = [env("STRIPE_WEBHOOK_SECRET"), Deno.env.get("STRIPE_WEBHOOK_SECRET_TEST")]
+    .filter((s): s is string => !!s);
+  for (const secret of secrets) {
+    try {
+      evt = await stripe.webhooks.constructEventAsync(raw, sig!, secret, undefined, cryptoProvider);
+      break;
+    } catch (_) { /* try next secret */ }
   }
+  if (!evt) return new Response("bad signature", { status: 400 });
 
   if (evt.type === "checkout.session.completed") {
     // deno-lint-ignore no-explicit-any

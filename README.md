@@ -82,8 +82,18 @@ You confirmed **Twilio** and **Stripe** accounts and a **new Supabase project**.
      → send the nudge template.
 3. **Set secrets** (never committed):
    `supabase secrets set TWILIO_ACCOUNT_SID=… TWILIO_AUTH_TOKEN=… TWILIO_PHONE_NUMBER=… STRIPE_SECRET_KEY=… STRIPE_WEBHOOK_SECRET=…`
+   - **Admin test payments (optional):** `STRIPE_SECRET_KEY_TEST=sk_test_…` and
+     `STRIPE_WEBHOOK_SECRET_TEST=whsec_…`. When an **admin** (non-comped) runs
+     checkout it uses these test keys — a real Stripe flow with test card
+     `4242 4242 4242 4242`, no real charge. Test payments are flagged
+     `payments.is_test` and excluded from admin revenue stats. Without the test
+     key set, an admin's checkout refuses (it never falls back to a live charge).
+     Note admins are comped by default (free SMS, no checkout) — toggle their
+     comp off in the admin dashboard to exercise the test payment flow.
 4. **Point webhooks:** Twilio number → `…/functions/v1/twilio-inbound`;
-   Stripe webhook → `…/functions/v1/stripe-webhook`.
+   Stripe webhook → `…/functions/v1/stripe-webhook` (add a **test-mode**
+   endpoint too, to the same URL, and use its signing secret for
+   `STRIPE_WEBHOOK_SECRET_TEST`).
 5. **Flip the front end:** in `assets/js/config.js` set `BACKEND: "supabase"` and fill
    `SUPABASE_URL` + `SUPABASE_ANON_KEY` (the anon key is public, gated by RLS).
 6. **Deploy** the static files to **GitHub Pages** (Settings → Pages → main / root).
