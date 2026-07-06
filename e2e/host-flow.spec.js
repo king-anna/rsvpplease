@@ -24,8 +24,10 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     // ?backend=local override — go to the auth route directly instead.
     await expect(page.locator("[data-start]").first()).toBeVisible();
     await page.goto(`${LOCAL}#/signin`);
+    await page.click("#au-switch"); // → create account (name + email + password)
     await page.fill("#au-name", "E2E Host");
     await page.fill("#au-email", "e2e-host@test.local");
+    await page.fill("#au-pass", "e2epassword");
     await page.click("#au-go");
     await expect(page.locator("h1")).toHaveText("Your parties");
     await expect(page.locator(".empty")).toContainText("No parties yet");

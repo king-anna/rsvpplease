@@ -43,6 +43,16 @@ test("backend: email sign-in is enabled in auth settings", async ({ request }) =
   expect(s.disable_signup).toBe(false);
 });
 
+test("backend: password sign-in endpoint is live", async ({ request }) => {
+  // Bogus creds → 400 invalid_credentials proves the password grant works
+  // without creating a user or sending any email.
+  const res = await request.post(`${SUPABASE}/auth/v1/token?grant_type=password`, {
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    data: { email: "nobody-xyz@rsvpplease.app", password: "definitely-wrong" },
+  });
+  expect(res.status()).toBe(400);
+});
+
 test("backend: magic-link email sends (registration)", async ({ request }) => {
   // Regression guard for the 2026-07 SMTP outage (OTP hung → 504). Sends a
   // real email to a test address, so live smoke stays opt-in.

@@ -715,60 +715,142 @@
     window.scrollTo(0, 0);
   }
 
-  function showCheckEmail(email) {
+  function showCheckEmail(email, kind = "signin") {
+    const copy = kind === "confirm"
+      ? { h: "Confirm your email", p: `We sent a confirmation link to <b>${esc(email)}</b>. Tap it to finish creating your account, then sign in.` }
+      : kind === "reset"
+      ? { h: "Reset link sent", p: `We sent a password-reset link to <b>${esc(email)}</b>. Open it to choose a new password.` }
+      : { h: "Check your inbox", p: `We sent a magic sign-in link to <b>${esc(email)}</b>. Open it on this device and you'll land right back here.` };
     app.innerHTML = `
       <div class="auth-wrap"><div class="card auth-card ticket text-c reveal">
         <div style="width:60px;margin:4px auto 14px;color:var(--rose)">${icon("inbox", "")}</div>
-        <h2>Check your inbox</h2>
-        <p class="muted mt-8">We sent a magic sign-in link to <b>${esc(email)}</b>.
-          Open it on this device and you'll land right back here.</p>
+        <h2>${copy.h}</h2>
+        <p class="muted mt-8">${copy.p}</p>
+        <p class="help mt-16">Didn't get it? Check spam, or <button class="linkbtn" onclick="location.hash='#/signin';location.reload()">try again</button>.</p>
       </div></div>`;
   }
 
   /* ===================================================================== */
   /*  AUTH                                                                  */
   /* ===================================================================== */
+  // signup = create account (name + password); signin = password login. Both
+  // screens offer "email me a magic link instead" (passwordless fallback / how
+  // an account with no password yet gets in) and remember the typed email.
+  let authMode = "signin";
   function viewAuth() {
+    const signup = authMode === "signup";
     app.innerHTML = `
       <div class="auth-wrap">
         <div class="card auth-card ticket reveal">
           <div class="text-c mb-24">
             <a href="#/" class="wordmark" style="font-size:2rem;text-decoration:none">RSVP<b>please</b><span class="dot">.</span></a>
-            <p class="muted mt-8">Invitations that chase the replies for you.</p>
+            <p class="muted mt-8">${signup ? "Create your account — free." : "Welcome back."}</p>
           </div>
-          <div class="field mb-16"><span class="label">Your name</span>
-            <input class="input" id="au-name" placeholder="e.g. Mara Daly" autocomplete="name"></div>
-          <div class="field mb-24"><span class="label">Email</span>
+          ${signup ? `<div class="field mb-16"><span class="label">Your name</span>
+            <input class="input" id="au-name" placeholder="e.g. Mara Daly" autocomplete="name"></div>` : ""}
+          <div class="field mb-16"><span class="label">Email</span>
             <input class="input" id="au-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
-          <button class="btn primary block lg" id="au-go">Start planning ${icon("heart")}</button>
-          <p class="help text-c mt-16">${window.Api.isBackendLive()
-            ? "We'll email you a magic sign-in link — no password needed."
-            : "No password yet — Phase 2 adds Supabase magic-link sign-in."}</p>
+          <div class="field mb-8"><span class="label">Password</span>
+            <input class="input" id="au-pass" type="password" placeholder="${signup ? "At least 8 characters" : "Your password"}"
+              autocomplete="${signup ? "new-password" : "current-password"}"></div>
+          ${signup ? "" : `<div class="text-c mb-16"><button class="linkbtn" id="au-forgot" type="button">Forgot password?</button></div>`}
+          <button class="btn primary block lg mt-8" id="au-go">${signup ? "Create account" : "Sign in"} ${icon("heart")}</button>
+          <div class="auth-or"><span>or</span></div>
+          <button class="btn soft block" id="au-magic" type="button">${icon("send")} Email me a magic link instead</button>
+          <p class="help text-c mt-16">
+            ${signup ? "Already have an account?" : "New to RSVPplease?"}
+            <button class="linkbtn" id="au-switch" type="button">${signup ? "Sign in" : "Create one — free"}</button>
+          </p>
+          ${window.Api.isBackendLive() ? "" : `<p class="help text-c" style="opacity:.7">Preview mode — any password works.</p>`}
         </div>
       </div>`;
+
     let busy = false;
+    const setBusy = (b, label) => {
+      busy = b; const go = document.getElementById("au-go");
+      go.disabled = b; if (b) go.textContent = label; else go.innerHTML = `${signup ? "Create account" : "Sign in"} ${icon("heart")}`;
+    };
+    const grab = () => ({ name: signup ? val("au-name") : "", email: (val("au-email") || "").trim(), pass: val("au-pass") });
+
     const submit = async () => {
       if (busy) return;
-      const name = val("au-name"), email = val("au-email");
-      if (!name) return toast("Add your name to continue", "err");
-      if (window.Api.isBackendLive() && !email) return toast("Add your email — we'll send a magic link", "err");
-      const btn = document.getElementById("au-go");
-      busy = true; btn.disabled = true; btn.textContent = "Sending your magic link…";
+      const { name, email, pass } = grab();
+      if (!email) return toast("Enter your email", "err");
+      if (signup && !name) return toast("Add your name to continue", "err");
+      if (!pass || (signup && pass.length < 8)) return toast(signup ? "Use a password of at least 8 characters" : "Enter your password", "err");
+      setBusy(true, signup ? "Creating your account…" : "Signing you in…");
       try {
-        const res = await window.Api.signIn({ name, email });
-        if (res && res.pending) return showCheckEmail(res.email);
-        host = res; go("#/events"); render();
+        if (signup) {
+          const res = await window.Api.signUpPassword({ name, email, password: pass });
+          if (res && res.needsConfirm) return showCheckEmail(email, "confirm");
+          host = await window.Api.getHost(); go("#/events"); render();
+        } else {
+          await window.Api.signInPassword({ email, password: pass });
+          host = await window.Api.getHost(); go("#/events"); render();
+        }
       } catch (e) {
-        const msg = /timeout|504|fetch/i.test(String(e.message))
-          ? "Our sign-in emails are having a moment — please try again shortly."
-          : (e.message || "Sign-in failed");
-        toast(msg, "err");
-        busy = false; btn.disabled = false; btn.innerHTML = `Start planning ${icon("heart")}`;
+        const m = String(e && e.message || "");
+        const msg = /invalid login|invalid credentials|not confirmed/i.test(m)
+          ? "Wrong email or password. Try a magic link below, or create an account."
+          : /registered|already/i.test(m) ? "That email already has an account — sign in instead."
+          : (m || "Something went wrong");
+        toast(msg, "err"); setBusy(false);
       }
     };
+
+    const magicLink = async () => {
+      const { name, email } = grab();
+      if (!email) return toast("Enter your email first", "err");
+      try { const res = await window.Api.signIn({ name, email }); if (res && res.pending) return showCheckEmail(email); host = res; go("#/events"); render(); }
+      catch (e) {
+        const msg = /timeout|504|fetch/i.test(String(e.message)) ? "Our sign-in emails are having a moment — please try again shortly." : (e.message || "Couldn't send the link");
+        toast(msg, "err");
+      }
+    };
+
     document.getElementById("au-go").addEventListener("click", submit);
+    document.getElementById("au-magic").addEventListener("click", magicLink);
+    document.getElementById("au-switch").addEventListener("click", () => { authMode = signup ? "signin" : "signup"; viewAuth(); });
+    document.getElementById("au-forgot")?.addEventListener("click", async () => {
+      const email = (val("au-email") || "").trim();
+      if (!email) return toast("Enter your email, then tap Forgot password", "err");
+      try { await window.Api.resetPassword(email); showCheckEmail(email, "reset"); }
+      catch (e) { toast(e.message || "Couldn't send the reset link", "err"); }
+    });
     app.querySelectorAll("input").forEach((i) =>
       i.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); }));
+  }
+
+  // Set-a-new-password screen (opened from a reset-password email link).
+  function viewSetPassword() {
+    app.innerHTML = `
+      <div class="auth-wrap">
+        <div class="card auth-card ticket reveal">
+          <div class="text-c mb-24">
+            <a href="#/" class="wordmark" style="font-size:2rem;text-decoration:none">RSVP<b>please</b><span class="dot">.</span></a>
+            <p class="muted mt-8">Choose a new password.</p>
+          </div>
+          <div class="field mb-16"><span class="label">New password</span>
+            <input class="input" id="sp-pass" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+          <div class="field mb-24"><span class="label">Confirm password</span>
+            <input class="input" id="sp-pass2" type="password" placeholder="Repeat it" autocomplete="new-password"></div>
+          <button class="btn primary block lg" id="sp-go">${icon("check")} Save new password</button>
+        </div>
+      </div>`;
+    const submit = async () => {
+      const p1 = val("sp-pass"), p2 = val("sp-pass2");
+      if (!p1 || p1.length < 8) return toast("Use at least 8 characters", "err");
+      if (p1 !== p2) return toast("Those passwords don't match", "err");
+      const btn = document.getElementById("sp-go"); btn.disabled = true; btn.textContent = "Saving…";
+      try {
+        await window.Api.updatePassword(p1);
+        window.__rsvpRecovery = false;
+        toast("Password updated — you're in", "ok");
+        host = await window.Api.getHost(); go("#/events"); render();
+      } catch (e) { toast(e.message || "Couldn't update the password", "err"); btn.disabled = false; btn.innerHTML = `${icon("check")} Save new password`; }
+    };
+    document.getElementById("sp-go").addEventListener("click", submit);
+    app.querySelectorAll("input").forEach((i) => i.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); }));
   }
 
   /* ===================================================================== */
@@ -1718,6 +1800,9 @@
     if (mroot === "stories") return viewStories();
     if (mroot === "about") return viewAbout();
     if (mroot === "blog") { const s = blogSlug(); return s ? viewBlogPost(s) : viewBlogIndex(); }
+
+    // Password-reset link lands here with a recovery session → set a new one.
+    if (mroot === "reset" || window.__rsvpRecovery) return viewSetPassword();
 
     if (!host) {
       return (mroot === "signin" || mroot === "login") ? viewAuth() : viewLanding();

@@ -99,6 +99,12 @@
       window.Store.save(db);
       return db.host;
     },
+    // Preview mode has no real auth server — password sign-in/up just start a
+    // local session (any password works) so the flow is demoable.
+    async signInPassword({ name, email }) { const h = await this.signIn({ name: name || (email || "").split("@")[0], email }); return { ok: true, host: h }; },
+    async signUpPassword({ name, email }) { await this.signIn({ name, email }); return { ok: true, session: true, needsConfirm: false }; },
+    async resetPassword(email) { return { pending: true, email }; },
+    async updatePassword() { return { ok: true }; },
     async signOut() {
       const db = window.Store.load();
       db.host = null; window.Store.save(db);

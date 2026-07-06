@@ -74,6 +74,8 @@
         comped: !!(p && p.comped),
       };
     },
+    // Magic-link / OTP sign-in (passwordless fallback + how accounts without a
+    // password yet get in).
     async signIn({ name, email }) {
       const { error } = await sb.auth.signInWithOtp({
         email,
@@ -81,6 +83,36 @@
       });
       if (error) throw error;
       return { pending: true, email };
+    },
+    // Everyday sign-in with a password.
+    async signInPassword({ email, password }) {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return { ok: true, session: data.session };
+    },
+    // Create an account with a password. With email-confirmation on, no session
+    // is returned until the user confirms via email → caller shows "check inbox".
+    async signUpPassword({ name, email, password }) {
+      const { data, error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { name }, emailRedirectTo: location.origin + location.pathname },
+      });
+      if (error) throw error;
+      return { ok: true, session: data.session, needsConfirm: !data.session };
+    },
+    async resetPassword(email) {
+      // No hash in redirectTo — Supabase appends the recovery token to the hash,
+      // and onAuthStateChange(PASSWORD_RECOVERY) routes to the set-password view.
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: location.origin + location.pathname,
+      });
+      if (error) throw error;
+      return { pending: true, email };
+    },
+    async updatePassword(password) {
+      const { error } = await sb.auth.updateUser({ password });
+      if (error) throw error;
+      return { ok: true };
     },
     async signOut() { await sb.auth.signOut(); },
 
@@ -281,6 +313,10 @@
   };
 
   Object.assign(window.Api, impl);
-  // Re-render when the magic-link session resolves on return.
-  sb.auth.onAuthStateChange(() => { if (window.__rsvpRender) window.__rsvpRender(); });
+  // Re-render when the magic-link session resolves on return. A password-reset
+  // link lands with a recovery session → route to the set-new-password screen.
+  sb.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") { window.__rsvpRecovery = true; location.hash = "#/reset"; }
+    if (window.__rsvpRender) window.__rsvpRender();
+  });
 })();
