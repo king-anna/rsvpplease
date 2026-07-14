@@ -676,7 +676,7 @@
             <span class="mk-abt-note__ic">${lpIcon("chat", 22)}</span>
             <h2 class="mk-abt-note__t">Post not found</h2>
             <p class="mk-abt-note__d">This article may have moved. Head back to the blog to find what you're after.</p>
-            <div style="margin-top:20px"><a class="lp-btn lp-btn--outline lp-btn--lg" href="/blog.html">${lpIcon("chevronLeft", 16)} Back to blog</a></div>
+            <div style="margin-top:20px"><a class="lp-btn lp-btn--outline lp-btn--lg" href="/blog" data-bloghome>${lpIcon("chevronLeft", 16)} Back to blog</a></div>
           </div>
         </div></section>`);
       document.title = "Post not found — RSVPplease";
@@ -700,7 +700,7 @@
     lpShell("blog", `
       <article class="blog-post">
         <div class="lp-container blog-post__head lp-reveal">
-          <a class="blog-back" href="/blog.html" data-bloghome>${lpIcon("chevronLeft", 16)} Back to blog</a>
+          <a class="blog-back" href="/blog" data-bloghome>${lpIcon("chevronLeft", 16)} Back to blog</a>
           ${p.tags && p.tags.length ? `<div class="blog-taglist">${p.tags.map((t) => `<span class="blog-tag">${esc(t)}</span>`).join("")}</div>` : ""}
           <h1 class="blog-post__t">${esc(p.title)}</h1>
           ${p.excerpt ? `<p class="blog-post__lede">${esc(p.excerpt)}</p>` : ""}
@@ -1872,6 +1872,28 @@
   window.__rsvpRender = render; // api.supabase.js calls this on auth-state change
   window.addEventListener("hashchange", render);
   window.addEventListener("DOMContentLoaded", render);
+
+  // Smooth client-side nav for blog links (/blog and /blog/<slug>). Without this
+  // a click does a full reload, and in the static local preview /blog/<slug> has
+  // no file to hit at all. Intercepting keeps it instant and lets the same
+  // location.pathname-based router render the post. popstate re-renders on
+  // back/forward through these pushState entries.
+  document.addEventListener("click", (e) => {
+    // Only take over when we're already on the blog shell — elsewhere a /blog
+    // link must do a real navigation to load blog.html.
+    if (app.dataset.route !== "blog") return;
+    const a = e.target.closest("a[data-post], a[data-bloghome]");
+    if (!a) return;
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    const href = a.getAttribute("href") || "";
+    if (!/^\/blog(\/|$)/.test(href)) return;
+    e.preventDefault();
+    if (href !== location.pathname) history.pushState(null, "", href);
+    render();
+    window.scrollTo(0, 0);
+  });
+  window.addEventListener("popstate", render);
+
   if (document.readyState !== "loading") render();
   flashPaidReturn();
 })();

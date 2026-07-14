@@ -1,4 +1,10 @@
 # Cloudflare Pages routing.
 # Blog posts have no per-slug file — serve the blog SPA shell for any /blog/<slug>
-# (200 = rewrite, so the clean URL is preserved for SEO & sharing).
-/blog/*   /blog.html   200
+# so the clean URL is preserved (SEO + sharing) and app.js reads the slug from
+# location.pathname.
+#
+# IMPORTANT: the rewrite target must be the EXTENSIONLESS clean URL (/blog), not
+# /blog.html. Pages auto-redirects any *.html path to its clean URL, so a 200
+# rewrite to /blog.html gets bounced with a 308 to /blog — which drops the slug
+# and lands every post back on the blog index. Rewriting to /blog avoids that.
+/blog/*   /blog   200
