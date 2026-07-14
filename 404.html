@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>404 — this invite got lost in the mail · RSVPplease</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/assets/img/logo.svg" />
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:opsz,wght@9..40,400..700&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css?v=38" />
+  <style>
+    /* 404 — a small, self-contained scene that borrows the landing tokens. */
+    .nf{position:relative;min-height:100svh;display:grid;place-items:center;overflow:hidden;
+      background:var(--surface-page);padding:40px 24px;}
+    .nf__inner{position:relative;z-index:2;max-width:560px;width:100%;text-align:center;}
+
+    /* floating decoration — soft orbs + a few confetti dots */
+    .nf__orbs{position:absolute;inset:0;z-index:1;pointer-events:none;}
+    .nf__orb{position:absolute;border-radius:50%;filter:blur(2px);}
+    .nf__orb--blur{filter:blur(46px);opacity:.5;}
+    .nf__o1{width:230px;height:230px;top:-40px;left:-30px;background:var(--brand-soft-2);}
+    .nf__o2{width:260px;height:260px;bottom:-70px;right:-50px;background:var(--brand-soft);}
+    .nf__d1{width:14px;height:14px;top:16%;right:16%;background:var(--accent-gold);}
+    .nf__d2{width:11px;height:11px;top:33%;left:8%;background:#F0885A;}
+    .nf__d3{width:14px;height:14px;bottom:20%;left:17%;background:var(--green-500);}
+    .nf__d4{width:9px;height:9px;bottom:11%;right:18%;background:var(--brand-primary);}
+
+    .nf__badge{width:76px;height:76px;margin:0 auto 34px;border-radius:22px;background:var(--surface-card);
+      display:grid;place-items:center;box-shadow:var(--shadow-lg);}
+    .nf__badge svg{width:34px;height:34px;stroke:var(--brand-primary);}
+
+    .nf__code{font-family:var(--lp-display);font-weight:800;font-size:clamp(72px,15vw,116px);line-height:.9;
+      letter-spacing:-.03em;color:var(--brand-ink-strong);}
+    .nf__kicker{display:block;font-family:var(--lp-script);font-weight:700;font-size:26px;color:var(--brand-primary);
+      transform:rotate(-3deg);margin:6px 0 14px;}
+    .nf__title{font-family:var(--lp-display);font-weight:700;font-size:clamp(26px,5vw,34px);letter-spacing:-.02em;
+      color:var(--brand-ink-strong);margin:0 0 14px;}
+    .nf__lede{font-family:var(--lp-body);font-size:17px;line-height:1.6;color:var(--text-muted);
+      max-width:420px;margin:0 auto 30px;}
+    .nf__cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+    .nf__foot{margin-top:34px;font-family:var(--lp-body);font-size:14px;color:var(--text-subtle);}
+    .nf__foot a{color:var(--brand-primary-press);text-decoration:none;font-weight:600;}
+    .nf__foot a:hover{text-decoration:underline;}
+
+    @media (prefers-reduced-motion:no-preference){
+      .nf__badge{animation:nf-bob 5s ease-in-out infinite;}
+      .nf__o1{animation:nf-drift 13s ease-in-out infinite;}
+      .nf__o2{animation:nf-drift 16s ease-in-out infinite reverse;}
+      .nf__d1{animation:nf-bob 4.4s ease-in-out .2s infinite;}
+      .nf__d2{animation:nf-bob 5.2s ease-in-out .6s infinite;}
+      .nf__d3{animation:nf-bob 4.8s ease-in-out .9s infinite;}
+      .nf__d4{animation:nf-bob 5.6s ease-in-out .3s infinite;}
+    }
+    @keyframes nf-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+    @keyframes nf-drift{0%,100%{transform:translate(0,0);}50%{transform:translate(18px,-14px);}}
+  </style>
+</head>
+<body>
+  <main class="lp-root nf">
+    <div class="nf__orbs" aria-hidden="true">
+      <span class="nf__orb nf__orb--blur nf__o1"></span>
+      <span class="nf__orb nf__orb--blur nf__o2"></span>
+      <span class="nf__orb nf__d1"></span>
+      <span class="nf__orb nf__d2"></span>
+      <span class="nf__orb nf__d3"></span>
+      <span class="nf__orb nf__d4"></span>
+    </div>
+
+    <div class="nf__inner">
+      <div class="nf__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 7l-10 6L2 7" />
+        </svg>
+      </div>
+
+      <div class="nf__code">404</div>
+      <span class="nf__kicker">no reply on this one</span>
+      <h1 class="nf__title">This invite got lost in the mail.</h1>
+      <p class="nf__lede">The page you're looking for isn't RSVPing back. It may have moved, or the link's a little off — let's get you back to the party.</p>
+
+      <div class="nf__cta">
+        <a class="lp-btn lp-btn--primary lp-btn--lg" href="/">Take me home</a>
+        <a class="lp-btn lp-btn--outline lp-btn--lg" href="/#/signin">Start an invite</a>
+      </div>
+
+      <p class="nf__foot">Think this link should work? <a href="/how">See how RSVPplease works</a>.</p>
+    </div>
+  </main>
+</body>
+</html>
