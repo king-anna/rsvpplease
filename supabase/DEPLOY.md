@@ -37,6 +37,8 @@ Dashboard → **Edge Functions → Secrets**, or `supabase secrets set KEY=value
 | `PUBLIC_SITE_URL` | ⏳ | `https://rsvpplease.app` |
 | `CRON_SECRET` | ⏳ | any long random string (for the nudge cron) |
 | `TWILIO_WEBHOOK_URL` | optional | exact inbound URL from step 4 (for signature checks) |
+| `BLOG_WEBHOOK_SECRET` | ⏳ | the "signing secret" your SEO tool sends as `Authorization: Bearer …` (see step 10) |
+| `BLOG_WEBHOOK_SIGNING_SECRET` | optional | only if you also want the `X-Webhook-Signature` HMAC-SHA256 enforced |
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are injected automatically —
 don't set them. Pricing defaults to $10 + $1/guest (`PRICE_BASE_CENTS` / `PRICE_PER_GUEST_CENTS`
@@ -86,6 +88,30 @@ Workers & Pages → **Create → Pages → Connect to Git** → `evaamelnik-glit
 build command empty, output dir `/`). Add `rsvpplease.app` as a Cloudflare zone (move
 nameservers), then Pages → **Custom domains → rsvpplease.app** — Cloudflare creates the apex
 record and HTTPS automatically.
+
+## 10. Wire the blog / SEO webhook  ⏳
+Publishes an article to `https://rsvpplease.app/blog/<slug>` from an external content/SEO tool.
+
+1. Pick a strong secret (e.g. `openssl rand -base64 32`) and set it:
+   `supabase secrets set BLOG_WEBHOOK_SECRET='<secret>'` (or Dashboard → Edge Functions → Secrets).
+2. In your SEO tool's webhook settings, set:
+   - **Endpoint URL:** `https://ehhitnddiudoxgzoxpys.functions.supabase.co/blog-webhook`
+   - **Signing secret / Bearer token:** the same `<secret>`
+3. The tool POSTs JSON; the endpoint verifies `Authorization: Bearer <secret>`, upserts by `slug`
+   (re-posting the same slug edits the post), and returns `{ ok, slug, url }`.
+
+Payload (aliases accepted): `title` (required), `content` (HTML), `meta_description`, `slug`
+(defaults from title), `featured_image_url`, `published_at`, plus optional `author`, `tags`,
+`excerpt`, `published:false` for a draft. Optional `X-Webhook-Signature: sha256=<hmac>` is only
+enforced if you also set `BLOG_WEBHOOK_SIGNING_SECRET`.
+
+Test:
+```bash
+curl -sX POST https://ehhitnddiudoxgzoxpys.functions.supabase.co/blog-webhook \
+  -H "Authorization: Bearer $BLOG_WEBHOOK_SECRET" -H "Content-Type: application/json" \
+  -d '{"title":"Hello world","content":"<p>First post.</p>","meta_description":"A test post."}'
+# → {"ok":true,"slug":"hello-world","url":"https://rsvpplease.app/blog/hello-world"}
+```
 
 ---
 

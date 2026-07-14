@@ -63,14 +63,30 @@ const first = (...vals: any[]) => vals.find((v) => v !== undefined && v !== null
 Deno.serve(async (req) => {
   const pf = preflight(req);
   if (pf) return pf;
+
+  // A friendly GET so opening the URL in a browser explains the endpoint
+  // instead of erroring — handy while wiring up the SEO tool.
+  if (req.method === "GET") {
+    return json({
+      ok: true,
+      service: "blog-webhook",
+      how: "POST JSON with header 'Authorization: Bearer <your secret>'. Returns 2xx and the published URL.",
+      fields: ["title", "content", "meta_description", "slug", "featured_image_url", "published_at"],
+    });
+  }
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+
   try {
     // --- Auth: Bearer token (primary), with header/query fallbacks. ---------
-    const secret = env("BLOG_WEBHOOK_SECRET");
+    // Read the secret without throwing so an unconfigured endpoint returns a
+    // clean "not configured" rather than leaking the env-var name in a 400.
+    const secret = env("BLOG_WEBHOOK_SECRET", false);
+    if (!secret) return json({ error: "webhook not configured — set BLOG_WEBHOOK_SECRET" }, 503);
     const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
     const given = bearer ||
       req.headers.get("x-blog-secret") ||
       new URL(req.url).searchParams.get("secret") || "";
-    if (!secret || given !== secret) return json({ error: "unauthorized" }, 401);
+    if (given !== secret) return json({ error: "unauthorized" }, 401);
 
     const raw = await req.text();
 
