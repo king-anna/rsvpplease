@@ -138,8 +138,10 @@ Host-side: the guest table/conversation drawer shows the guest's `answer` when p
 
 ## Phase 3 — Media (roadmap)
 
-- **GIFs on comments** via Tenor v2 (requires a free `TENOR_API_KEY` from the user;
-  proxied through an edge function so the key stays server-side).
+- **GIFs on comments** via the GIPHY API (Tenor stopped accepting new API clients
+  Jan 2026). Requires a free `GIPHY_API_KEY` from the user; proxied through an edge
+  function so the key stays server-side. Fallback if GIPHY access changes too:
+  "paste a GIF URL" with no third-party dependency. Re-verify provider at build time.
 - **Photo album:** guests upload snaps to a public-read Storage bucket via signed
   upload URLs issued per token; host can delete; album section on the invite page.
 
