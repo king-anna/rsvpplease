@@ -141,6 +141,12 @@
         spots: Number(data.spots) || 40,
         allowPlusOne: data.allowPlusOne !== false,
         coverImageUrl: data.coverImageUrl || "",
+        titleFont: data.titleFont || null,
+        effectEmoji: data.effectEmoji || "",
+        extras: data.extras || {},
+        guestQuestion: data.guestQuestion || "",
+        hideAddress: !!data.hideAddress,
+        showGuests: !!data.showGuests,
         templates: Object.assign({}, DEFAULT_TEMPLATES),
         status: "draft",
         paidAt: null,
@@ -179,8 +185,20 @@
       const guest = Object.values(db.guests).find((g) => g.token === token);
       if (!guest) return null;
       const ev = db.events[guest.eventId] || null;
-      // `going` = confirmed heads incl. plus-ones — the guest page's spots bar.
-      return { guest, event: ev ? Object.assign({}, ev, { going: countsFor(ev.id, db).party }) : null };
+      if (!ev) return { guest, event: null };
+      // Mirror the backend's privacy gating: hidden address until THIS guest
+      // confirms; going count/names only when opted in AND they've responded.
+      const responded = guest.status === "confirmed" || guest.status === "declined";
+      const locationHidden = !!ev.hideAddress && guest.status !== "confirmed";
+      const showSocial = !!ev.showGuests && responded;
+      const confirmed = Object.values(db.guests)
+        .filter((g) => g.eventId === ev.id && g.status === "confirmed");
+      return { guest, event: Object.assign({}, ev, {
+        location: locationHidden ? "" : ev.location,
+        locationHidden,
+        goingCount: showSocial ? confirmed.reduce((s, g) => s + (Number(g.partySize) || 1), 0) : null,
+        goingNames: showSocial ? confirmed.slice(0, 8).map((g) => ((g.name || "").trim() || "A guest").split(/\s+/)[0]) : [],
+      }) };
     },
     async addGuests(eventId, list) {
       const db = window.Store.load();
@@ -328,7 +346,7 @@
     },
 
     /* RSVP response (from public page, or simulating an inbound SMS) */
-    async recordRsvp(token, { status, partySize, note, viaSms }) {
+    async recordRsvp(token, { status, partySize, note, answer, viaSms }) {
       const db = window.Store.load();
       const g = Object.values(db.guests).find((x) => x.token === token);
       if (!g) throw new Error("Invite not found");
@@ -339,7 +357,7 @@
       const inboundBody = viaSms
         ? (status === "confirmed" ? "YES" : "NO")
         : (status === "confirmed" ? "✅ Confirmed via RSVP page" : "🙅 Declined via RSVP page") +
-          (note ? ` — “${note}”` : "");
+          (note ? ` — “${note}”` : "") + (answer ? ` · answered: “${answer}”` : "");
       db.messages[window.Store.uid("m")] = {
         id: window.Store.uid("m"), eventId: ev.id, guestId: g.id,
         direction: "in", kind: "rsvp", body: inboundBody, createdAt: now,
@@ -349,6 +367,7 @@
       g.respondedAt = now;
       if (status === "confirmed" && partySize) g.partySize = Number(partySize) || g.partySize;
       if (note) g.note = note;
+      if (answer) g.answer = answer;
 
       // Auto-reply with the host's customised yes/no template.
       const tplKey = status === "confirmed" ? "replyYes" : "replyNo";

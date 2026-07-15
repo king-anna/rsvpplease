@@ -1029,7 +1029,12 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .builder-grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start;}
 .builder-preview{position:sticky;top:90px;}
 .builder-preview .invite{width:100%;}
-.theme-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.theme-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+/* "+ Extras" collapsible in the builder */
+.extras-details{border:1.5px dashed var(--line-strong);border-radius:var(--r);padding:12px 16px;}
+.extras-details summary{cursor:pointer;font-weight:700;font-size:.92rem;color:var(--ink-soft);list-style:none;}
+.extras-details summary::-webkit-details-marker{display:none;}
+.extras-details[open] summary{color:var(--rose);margin-bottom:2px;}
 .theme-chip{padding:8px 16px;border-radius:999px;border:1.5px solid var(--line-strong);background:var(--surface);cursor:pointer;
   font:inherit;font-size:.85rem;font-weight:600;color:var(--ink-soft);transition:.12s;}
 .theme-chip:hover{border-color:var(--rose);color:var(--rose-deep);}
@@ -1157,7 +1162,83 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .inv-fairytale span{position:absolute;line-height:1;animation:inv-fairy ease-in-out infinite;}
 @keyframes inv-fairy{0%,100%{opacity:.3;transform:translateY(0) scale(.8) rotate(-8deg);}50%{opacity:1;transform:translateY(-12px) scale(1.05) rotate(8deg);}}
 
-@media (prefers-reduced-motion:reduce){.inv-motif,.inv-motif *{animation:none!important;}.inv-shine::before{display:none;}.inv-hearts span,.inv-fairytale span{opacity:.85;}}
+/* host-picked emoji effect — falls like confetti, banner scale */
+.inv-emojifx span{position:absolute;top:-34px;line-height:1;opacity:.95;animation:inv-fall linear infinite;}
+
+/* ===== Guest page glow-up (Phase 1) ================================== */
+/* Full-viewport effect layer behind the invite card. */
+.inv-pagefx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.inv-pagefx .inv-motif{position:absolute;inset:0;}
+.rsvp-stage{position:relative;z-index:1;}
+/* Falling/rising motifs were tuned to the 320px banner — page scale uses vh. */
+.inv-pagefx .inv-confetti span,.inv-pagefx .inv-emojifx span{animation-name:inv-fall-page;}
+.inv-pagefx .inv-petals span,.inv-pagefx .inv-leaves span{animation-name:inv-fall-sway-page;}
+.inv-pagefx .inv-bubbles span{animation-name:inv-rise-page;}
+.inv-pagefx .inv-hearts span{animation-name:inv-heart-rise-page;}
+@keyframes inv-fall-page{from{transform:translateY(-6vh) rotate(0deg);}to{transform:translateY(108vh) rotate(340deg);}}
+@keyframes inv-fall-sway-page{
+  0%{transform:translate(0,-6vh) rotate(0deg);}
+  50%{transform:translate(18px,48vh) rotate(180deg);}
+  100%{transform:translate(-10px,108vh) rotate(360deg);}
+}
+@keyframes inv-rise-page{0%{transform:translateY(0);opacity:0;}12%{opacity:.85;}100%{transform:translateY(-112vh);opacity:0;}}
+@keyframes inv-heart-rise-page{0%{transform:translateY(0) scale(.7);opacity:0;}12%{opacity:.95;}90%{opacity:.9;}100%{transform:translateY(-110vh) scale(1.05);opacity:0;}}
+
+/* The themed page paints its own gradient — the default pink radial blobs and
+   grain (body::before/::after, fixed layers) would sit on top of it. */
+body.rsvp-themed::before,body.rsvp-themed::after{display:none;}
+
+/* Frosted-glass invite card over the painted page. */
+body.rsvp-themed .invite.ticket{background:rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+  border:1px solid rgba(255,255,255,.55);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.rsvp-themed .invite.ticket{background:rgba(255,255,255,.97);}
+}
+/* Dark themes: dark glass + re-pointed ink tokens inside the card. */
+body.rsvp-dark .invite.ticket{background:rgba(20,29,52,.82);border-color:rgba(255,255,255,.14);
+  --surface:#1B2747;--surface-soft:rgba(255,255,255,.06);--ink:#F2F5FF;--ink-soft:#C4CEE8;
+  --ink-faint:#93A0C4;--line:rgba(255,255,255,.16);--line-strong:rgba(255,255,255,.28);color:var(--ink);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.rsvp-dark .invite.ticket{background:rgba(20,29,52,.97);}
+}
+body.rsvp-dark .invite .input{background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--line);}
+body.rsvp-dark .invite .host-note{background:rgba(255,255,255,.06);}
+body.rsvp-dark .invite .bubble{background:rgba(255,255,255,.1);color:var(--ink);}
+
+/* RSVP orbs — big circular glass buttons with themed emoji. */
+.big-choice--orbs{display:flex;gap:18px;justify-content:center;padding:6px 0 2px;}
+.choice--orb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:132px;height:132px;border-radius:50%;cursor:pointer;border:1.5px solid var(--line-strong);
+  background:radial-gradient(120% 120% at 30% 22%,rgba(255,255,255,.85),rgba(255,255,255,.45));
+  box-shadow:var(--shadow-sm);transition:transform .14s var(--ease-out,ease),box-shadow .18s,border-color .18s;}
+body.rsvp-dark .choice--orb{background:radial-gradient(120% 120% at 30% 22%,rgba(255,255,255,.22),rgba(255,255,255,.06));}
+.choice--orb:hover{transform:translateY(-3px) scale(1.03);}
+.choice--orb .choice__emo{font-size:2.1rem;line-height:1.15;}
+.choice--orb .big{font-family:var(--font-display);font-size:1.12rem;line-height:1.05;}
+.choice--orb .choice__sub{font-size:.72rem;font-weight:500;color:var(--ink-soft);}
+.choice--orb.sel{transform:scale(1.06);}
+.choice--orb.yes.sel{border-color:var(--ok);box-shadow:0 0 0 4px var(--ok-bg),0 10px 28px -8px rgba(63,157,107,.55);}
+.choice--orb.no.sel{border-color:var(--no);box-shadow:0 0 0 4px var(--no-bg),0 10px 28px -8px rgba(194,93,110,.5);}
+body.rsvp-dark .choice--orb.yes.sel{box-shadow:0 0 0 4px rgba(63,157,107,.35),0 10px 28px -8px rgba(63,157,107,.6);}
+body.rsvp-dark .choice--orb.no.sel{box-shadow:0 0 0 4px rgba(194,93,110,.35),0 10px 28px -8px rgba(194,93,110,.55);}
+@media (max-width:420px){.big-choice--orbs{gap:12px;}.choice--orb{width:118px;height:118px;}}
+
+/* Extras chips (dress code / playlist / registry / parking). */
+.inv-extras{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;}
+.inv-extra{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:var(--r-pill);
+  background:var(--surface-soft);border:1px solid var(--line);font-size:.86rem;font-weight:600;color:var(--ink-soft);text-decoration:none;}
+.inv-extra b{color:var(--ink);font-weight:700;}
+a.inv-extra:hover{border-color:var(--rose);color:var(--rose);}
+body.rsvp-dark .inv-extra{background:rgba(255,255,255,.07);}
+
+/* Social proof strip (opt-in, shown after this guest replied). */
+.inv-going{display:flex;align-items:center;gap:10px;margin:14px 0 0;padding:11px 14px;border-radius:var(--r);
+  background:var(--ok-bg);color:var(--ok);font-weight:600;font-size:.92rem;}
+body.rsvp-dark .inv-going{background:rgba(63,157,107,.18);color:#8FE0B4;}
+.inv-going .names{color:inherit;opacity:.85;font-weight:500;}
+
+@media (prefers-reduced-motion:reduce){.inv-motif,.inv-motif *,.inv-pagefx *{animation:none!important;}.inv-shine::before{display:none;}.inv-hearts span,.inv-fairytale span,.inv-emojifx span{opacity:.85;}}
 
 /* ===== Blog (marketing · webhook-fed posts) ===== */
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(322px,1fr));gap:26px;}

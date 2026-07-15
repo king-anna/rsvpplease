@@ -39,13 +39,16 @@
     guestCountAtPayment: r.guest_count_at_payment, archived: !!r.archived,
     theme: r.theme || "confetti", palette: r.palette || "blush",
     spots: r.spots || null, allowPlusOne: r.allow_plus_one !== false,
+    titleFont: r.title_font || null, effectEmoji: r.effect_emoji || "",
+    extras: r.extras || {}, guestQuestion: r.guest_question || "",
+    hideAddress: !!r.hide_address, showGuests: !!r.show_guests,
     createdAt: ts(r.created_at) || 0,
     counts: countsFromGuests(r.guests),
   });
   const guestFromRow = (g) => ({
     id: g.id, eventId: g.event_id, name: g.name || "", phone: g.phone || "",
     email: g.email || "", channel: g.channel || "sms", partySize: g.party_size || 1,
-    status: g.status || "pending", token: g.token, note: g.note || "",
+    status: g.status || "pending", token: g.token, note: g.note || "", answer: g.answer || "",
     invitedAt: ts(g.invited_at), respondedAt: ts(g.responded_at),
     nudgeCount: g.nudge_count || 0, lastNudgeAt: ts(g.last_nudge_at), createdAt: ts(g.created_at) || 0,
   });
@@ -139,6 +142,9 @@
         theme: d.theme || "confetti", palette: d.palette || "blush",
         spots: Number(d.spots) || 40, allow_plus_one: d.allowPlusOne !== false,
         cover_image_url: d.coverImageUrl || null,
+        title_font: d.titleFont || null, effect_emoji: d.effectEmoji || null,
+        extras: d.extras || {}, guest_question: d.guestQuestion || null,
+        hide_address: !!d.hideAddress, show_guests: !!d.showGuests,
       };
       const { data, error } = await sb.from("events").insert(row).select("*").single();
       if (error) throw error;
@@ -149,7 +155,9 @@
       const map = { name: "name", description: "description", date: "event_date", location: "location",
         rsvpDeadline: "rsvp_deadline", nudgeAfterHours: "nudge_after_hours", nudgeMax: "nudge_max",
         status: "status", coverImageUrl: "cover_image_url", archived: "archived",
-        theme: "theme", palette: "palette", spots: "spots", allowPlusOne: "allow_plus_one" };
+        theme: "theme", palette: "palette", spots: "spots", allowPlusOne: "allow_plus_one",
+        titleFont: "title_font", effectEmoji: "effect_emoji", extras: "extras",
+        guestQuestion: "guest_question", hideAddress: "hide_address", showGuests: "show_guests" };
       for (const k in map) if (k in p) row[map[k]] = (p[k] === "" && /date|deadline/i.test(k)) ? null : p[k];
       const { data, error } = await sb.from("events").update(row).eq("id", id)
         .select("*, guests(status, party_size)").single();
@@ -180,11 +188,18 @@
       if (error || !data || !data.event) return null;
       const ev = data.event, g = data.guest;
       return {
-        guest: { name: g.name, partySize: g.party_size, status: g.status, respondedAt: ts(g.responded_at), token },
+        guest: { name: g.name, partySize: g.party_size, status: g.status, respondedAt: ts(g.responded_at),
+          answer: g.answer || "", token },
         event: { name: ev.name, description: ev.description || "", date: ev.event_date || "",
-          location: ev.location || "", hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "",
+          location: ev.location || "", locationHidden: !!ev.location_hidden,
+          hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "",
           theme: ev.theme || "confetti", palette: ev.palette || "blush",
-          spots: ev.spots || null, allowPlusOne: ev.allow_plus_one !== false, going: Number(ev.going) || 0 },
+          spots: ev.spots || null, allowPlusOne: ev.allow_plus_one !== false,
+          titleFont: ev.title_font || null, effectEmoji: ev.effect_emoji || "",
+          extras: ev.extras || {}, guestQuestion: ev.guest_question || "",
+          showGuests: !!ev.show_guests,
+          goingCount: ev.going_count == null ? null : Number(ev.going_count),
+          goingNames: Array.isArray(ev.going_names) ? ev.going_names : [] },
       };
     },
     async addGuests(id, list) {
@@ -274,9 +289,10 @@
       if (error) throw error;
       return { ok: true };
     },
-    async recordRsvp(token, { status, partySize, note }) {
+    async recordRsvp(token, { status, partySize, note, answer }) {
       const { data, error } = await sb.rpc("rsvp_submit", {
         p_token: token, p_status: status, p_party: partySize ? Number(partySize) : null, p_note: note || null,
+        p_answer: answer || null,
       });
       if (error) throw error;
       sb.functions.invoke("notify-host", { body: { token } }).catch(() => {});

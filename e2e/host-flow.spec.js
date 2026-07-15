@@ -33,10 +33,19 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await expect(page.locator(".empty")).toContainText("No parties yet");
   });
 
-  await test.step("create a party", async () => {
+  await test.step("create a party (with glow-up fields)", async () => {
     await page.locator("[data-new]").first().click();
     await page.fill("#f-name", "E2E Garden Party");
     await page.fill("#f-loc", "14 Rosewood Lane");
+    // Phase-1 invite glow-up: font, effect, extras, question
+    await page.click('[data-font="playful"]');
+    await page.fill("#f-fx", "🎈🎂");
+    await page.locator(".extras-details summary").click();
+    await page.fill("#f-x-dress", "Garden chic");
+    await page.fill("#f-question", "Any dietary needs?");
+    // live preview reflects the effect + chip
+    await expect(page.locator("#inv-preview .inv-emojifx span").first()).toHaveText("🎈");
+    await expect(page.locator("#inv-preview .inv-extra")).toContainText("Garden chic");
     await page.click("#f-save");
     await expect(page.locator("h1")).toHaveText("E2E Garden Party");
     await expect(page.locator(".status-pill")).toContainText("Link only");
@@ -64,21 +73,27 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await page.locator(".modal-foot button", { hasText: "Close" }).click();
   });
 
-  await test.step("guest opens their link and confirms", async () => {
+  await test.step("guest opens their link and confirms (glow-up page)", async () => {
     await page.goto(`/rsvp.html?backend=local&t=${encodeURIComponent(rsvpToken)}`);
     await expect(page.locator(".invite h1")).toHaveText("E2E Garden Party");
-    await page.click(".choice.yes");
+    // full-page takeover + custom emoji effect + extras chip render
+    await expect(page.locator("body")).toHaveClass(/rsvp-themed/);
+    await expect(page.locator(".inv-pagefx .inv-emojifx span").first()).toHaveText("🎈");
+    await expect(page.locator(".inv-extra")).toContainText("Garden chic");
+    await page.click(".choice--orb.yes");
+    await page.fill("#r-answer", "Gluten-free");
     await page.click("#r-submit");
     await expect(page.locator(".invite h2")).toHaveText("You're on the list!");
   });
 
-  await test.step("host dashboard reflects the RSVP", async () => {
+  await test.step("host dashboard reflects the RSVP (incl. the guest's answer)", async () => {
     await page.goto(`${LOCAL}#/events`);
     const card = page.locator(".party-card");
     await expect(card).toHaveCount(1);
     await expect(card.locator(".party-card__stats div").first()).toContainText("1"); // going
     await card.click();
     await expect(page.locator(".stats .stat.ok .n")).toHaveText("1"); // confirmed
+    await expect(page.locator("tr[data-guest]").first()).toContainText("Gluten-free"); // question answer
   });
 
   await test.step(`activate SMS nudges — ${TOTAL} for ${GUESTS} guests`, async () => {

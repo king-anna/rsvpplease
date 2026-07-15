@@ -132,24 +132,40 @@
       orchid: ["#9B5DE5", "#6B3FA0"], lagoon: ["#1FB0A6", "#0F7A73"], petal: ["#E58AA9", "#B86081"],
       navy: ["#2F4A87", "#1B2E59"], berry: ["#C0397A", "#8E2458"], sky: ["#3E8FD6", "#245b8f"], plum: ["#7E57A8", "#553C75"],
     },
-    // Each theme = its own font + a distinct animated motif. The colour comes
-    // from the selected palette (works for every theme, dark or light).
+    // Each theme = its own font + a distinct animated motif + a yes/no emoji
+    // pair for the RSVP orbs. The colour comes from the selected palette
+    // (works for every theme, dark or light).
     THEMES: {
-      confetti: { label: "Confetti", palette: "blush",    dark: false, motif: "confetti", font: "'Bricolage Grotesque'" },
-      sunset:   { label: "Sunset",   palette: "marigold", dark: false, motif: "sun",      font: "'Fredoka'" },
-      garden:   { label: "Garden",   palette: "sage",     dark: false, motif: "leaves",   font: "'Bricolage Grotesque'" },
-      bloom:    { label: "Bloom",    palette: "petal",    dark: false, motif: "petals",   font: "'Fredoka'" },
-      breeze:   { label: "Breeze",   palette: "lagoon",   dark: false, motif: "bubbles",  font: "'Bricolage Grotesque'" },
-      bold:     { label: "Bold",     palette: "navy",     dark: false, motif: "shine",    font: "'Space Grotesk'" },
-      elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "sparkles", font: "'DM Serif Display'" },
-      midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "stars",    font: "'Space Grotesk'" },
-      noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "shine",    font: "'Bricolage Grotesque'" },
-      hearts:   { label: "Hearts",   palette: "berry",    dark: false, motif: "hearts",   font: "'Fredoka'" },
-      cars:     { label: "Cars",     palette: "sky",      dark: false, motif: "cars",     font: "'Space Grotesk'" },
-      dinos:    { label: "Dinosaurs",palette: "sage",     dark: false, motif: "dinos",    font: "'Fredoka'" },
-      fairytale:{ label: "Fairytale",palette: "orchid",   dark: false, motif: "fairytale",font: "'DM Serif Display'" },
+      confetti: { label: "Confetti", palette: "blush",    dark: false, motif: "confetti", font: "'Bricolage Grotesque'", yes: "🎉", no: "😢" },
+      sunset:   { label: "Sunset",   palette: "marigold", dark: false, motif: "sun",      font: "'Fredoka'",             yes: "🌞", no: "🌧️" },
+      garden:   { label: "Garden",   palette: "sage",     dark: false, motif: "leaves",   font: "'Bricolage Grotesque'", yes: "🌿", no: "🥀" },
+      bloom:    { label: "Bloom",    palette: "petal",    dark: false, motif: "petals",   font: "'Fredoka'",             yes: "🌸", no: "🥀" },
+      breeze:   { label: "Breeze",   palette: "lagoon",   dark: false, motif: "bubbles",  font: "'Bricolage Grotesque'", yes: "🫧", no: "😢" },
+      bold:     { label: "Bold",     palette: "navy",     dark: false, motif: "shine",    font: "'Space Grotesk'",       yes: "⚡", no: "😶" },
+      elegant:  { label: "Elegant",  palette: "orchid",   dark: true,  motif: "sparkles", font: "'DM Serif Display'",    yes: "🥂", no: "😢" },
+      midnight: { label: "Midnight", palette: "lagoon",   dark: true,  motif: "stars",    font: "'Space Grotesk'",       yes: "🌙", no: "☁️" },
+      noir:     { label: "Noir",     palette: "navy",     dark: true,  motif: "shine",    font: "'Bricolage Grotesque'", yes: "🖤", no: "🥀" },
+      hearts:   { label: "Hearts",   palette: "berry",    dark: false, motif: "hearts",   font: "'Fredoka'",             yes: "😍", no: "💔" },
+      cars:     { label: "Cars",     palette: "sky",      dark: false, motif: "cars",     font: "'Space Grotesk'",       yes: "🏎️", no: "🛑" },
+      dinos:    { label: "Dinosaurs",palette: "sage",     dark: false, motif: "dinos",    font: "'Fredoka'",             yes: "🦖", no: "🥲" },
+      fairytale:{ label: "Fairytale",palette: "orchid",   dark: false, motif: "fairytale",font: "'DM Serif Display'",    yes: "✨", no: "🌧️" },
+    },
+    // Host-pickable title fonts (all already loaded on every page).
+    FONTS: {
+      classic: { label: "Classic", stack: "'Bricolage Grotesque'" },
+      elegant: { label: "Elegant", stack: "'DM Serif Display'" },
+      playful: { label: "Playful", stack: "'Fredoka'" },
+      bold:    { label: "Bold",    stack: "'Space Grotesk'" },
     },
     themeOf(event) { return this.THEMES[event.theme] || this.THEMES.confetti; },
+    titleFont(event) {
+      const f = this.FONTS[event.titleFont];
+      return f ? f.stack : this.themeOf(event).font;
+    },
+    choiceEmoji(event) {
+      const th = this.themeOf(event);
+      return { yes: th.yes || "🎉", no: th.no || "😢" };
+    },
     background(event) {
       if (event.coverImageUrl) {
         return `background:linear-gradient(rgba(21,34,63,.32),rgba(21,34,63,.55)),url('${event.coverImageUrl.replace(/'/g, "%27")}') center/cover`;
@@ -196,6 +212,18 @@
         `<span style="left:${(i * 4.6 + 2) % 98}%;top:${(i * 13 + 5) % 88}%;animation-duration:${1.8 + (i % 5) * 0.5}s;animation-delay:${(i % 8) * 0.3}s"></span>`).join("")}</div>`;
     },
     shine() { return `<div class="inv-motif inv-shine" aria-hidden="true"></div>`; },
+    // Host-picked emoji effect (grapheme-safe split, max 8 distinct emoji).
+    emojiList(s) {
+      let parts;
+      try {
+        parts = [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(String(s || ""))].map((x) => x.segment);
+      } catch (e) { parts = Array.from(String(s || "")); }
+      return parts.filter((t) => t.trim() && !/^[\w\s.,!?'"@#$%^&*()[\]{}<>\/\\|;:+=~`-]+$/.test(t)).slice(0, 8);
+    },
+    emojiFx(list) {
+      return `<div class="inv-motif inv-emojifx" aria-hidden="true">${Array.from({ length: 12 }, (_, i) =>
+        `<span style="left:${(i * 8.3 + 2) % 96}%;font-size:${16 + (i % 3) * 8}px;animation-duration:${5 + (i % 5)}s;animation-delay:${(i % 7) * 0.8}s">${list[i % list.length]}</span>`).join("")}</div>`;
+    },
     hearts() {
       const hs = ["💗", "💖", "❤️", "💕", "💘", "💞"];
       return `<div class="inv-motif inv-hearts" aria-hidden="true">${Array.from({ length: 13 }, (_, i) =>
@@ -217,8 +245,24 @@
         `<span style="left:${(i * 8.5 + 3) % 95}%;top:${(i * 17 + 6) % 82}%;font-size:${15 + (i % 3) * 7}px;animation-duration:${3 + (i % 4)}s;animation-delay:${(i % 6) * 0.5}s">${fs[i % fs.length]}</span>`).join("")}</div>`;
     },
     motifHTML(event) {
+      // A host-picked emoji set overrides the theme's built-in motif.
+      const em = this.emojiList(event.effectEmoji);
+      if (em.length) return this.emojiFx(em);
       const m = this.themeOf(event).motif;
       return typeof this[m] === "function" ? this[m]() : "";
+    },
+    // Full-viewport background for the guest RSVP page (cover image stays in
+    // the banner — the page behind it always gets the palette gradient).
+    pageBackground(event) {
+      const th = this.themeOf(event);
+      const [c1, c2] = this.PALETTES[event.palette] || this.PALETTES[th.palette];
+      return th.dark
+        ? `background:linear-gradient(160deg, ${c2} 0%, #15223F 55%, #0E1830 100%)`
+        : `background:linear-gradient(160deg, ${c1} 0%, ${c2} 100%)`;
+    },
+    // Fixed effect layer that floats the motif/emoji across the whole viewport.
+    pageLayer(event) {
+      return `<div class="inv-pagefx" aria-hidden="true">${this.motifHTML(event)}</div>`;
     },
     // The invitation banner. `tag` lets callers avoid a second h1 on dashboard pages.
     banner(event, tag = "h1") {
@@ -228,7 +272,7 @@
         <div class="inv-banner${th.dark ? " inv-banner--dark" : ""}" style="${this.background(event)}">
           ${this.motifHTML(event)}
           <span class="inv-kicker">You're invited!</span>
-          <${tag} class="inv-title" style="font-family:${th.font},Georgia,serif">${esc(event.name || "Your party")}</${tag}>
+          <${tag} class="inv-title" style="font-family:${this.titleFont(event)},Georgia,serif">${esc(event.name || "Your party")}</${tag}>
           <span class="inv-hostline"><span class="inv-host-av">${esc((hostName[0] || "♥").toUpperCase())}</span>Hosted by ${esc(hostName)}</span>
         </div>`;
     },

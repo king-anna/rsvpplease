@@ -1017,6 +1017,16 @@
   function invitePreviewHTML(ev, opts = {}) {
     const D = window.InviteDesign;
     const detail = (ic, text) => text ? `<div class="detail-line">${icon(ic)}<span>${esc(text)}</span></div>` : "";
+    const em = D.choiceEmoji(ev);
+    const x = ev.extras || {};
+    const chip = (emoji, label, value) => value ? `<span class="inv-extra">${emoji} <b>${esc(label)}</b> ${esc(value)}</span>` : "";
+    const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
+    const chips = [
+      chip("👗", "Dress code", x.dressCode),
+      chip("🎵", "Playlist", x.playlistUrl ? hostOf(x.playlistUrl) : ""),
+      chip("🎁", "Registry", x.registryUrl ? hostOf(x.registryUrl) : ""),
+      chip("🅿️", "Parking", x.parking),
+    ].join("");
     return `
       <div class="card invite ticket pad0" style="width:100%">
         ${D.banner(ev, opts.titleTag || "div")}
@@ -1024,12 +1034,15 @@
           <p class="muted text-c" style="margin:0 0 14px">Hi Sam — ${esc(ev.hostName || "your host")} would love to see you there.</p>
           <div class="mb-16">
             ${detail("calendar", ev.date ? fmt(ev.date) : "Date TBD")}
-            ${detail("location", ev.location || "Location TBD")}
+            ${ev.hideAddress
+              ? `<div class="detail-line">${icon("location")}<span class="faint">Address shared once you RSVP</span></div>`
+              : detail("location", ev.location || "Location TBD")}
           </div>
+          ${chips ? `<div class="inv-extras">${chips}</div>` : ""}
           ${ev.description ? `<div class="host-note mb-16">${esc(ev.description)}</div>` : ""}
-          <div class="big-choice" style="pointer-events:none">
-            <span class="choice yes"><span class="choice__ic">${icon("heart")}</span><span class="big">Yes</span><span class="choice__sub">Count me in</span></span>
-            <span class="choice no"><span class="choice__ic">${icon("x")}</span><span class="big">Can't make it</span><span class="choice__sub">Maybe next time</span></span>
+          <div class="big-choice big-choice--orbs" style="pointer-events:none">
+            <span class="choice--orb yes"><span class="choice__emo">${em.yes}</span><span class="big">Yes</span><span class="choice__sub">Count me in</span></span>
+            <span class="choice--orb no"><span class="choice__emo">${em.no}</span><span class="big">Can't make it</span><span class="choice__sub">Maybe next time</span></span>
           </div>
         </div>
       </div>`;
@@ -1047,7 +1060,13 @@
       allowPlusOne: !ev || ev.allowPlusOne !== false,
       coverImageUrl: (ev && ev.coverImageUrl) || "",
       photoFile: null,
+      titleFont: (ev && ev.titleFont) || null,       // null = theme's own font
+      effectEmoji: (ev && ev.effectEmoji) || "",     // "" = theme's own animation
+      hideAddress: !!(ev && ev.hideAddress),
+      showGuests: !!(ev && ev.showGuests),
     };
+    const xv = (k) => esc((ev && ev.extras && ev.extras[k]) || "");
+    const FX_PRESETS = ["🎉✨", "🍕🍺", "🎂🎈", "💍🥂", "🦖🌋"];
 
     mount("events", `
       <button class="crumb" data-back>${icon("chevronLeft")} ${id ? "Back to party" : "All parties"}</button>
@@ -1068,6 +1087,19 @@
             <div class="swatches">
               ${Object.entries(D.PALETTES).map(([k, [c]]) =>
                 `<button type="button" class="swatch${draft.palette === k ? " on" : ""}" data-pal="${k}" title="${k}" style="background:${c}"></button>`).join("")}
+            </div></div>
+          <div class="field mb-16"><span class="label">Title font</span>
+            <div class="theme-chips">
+              <button type="button" class="theme-chip${!draft.titleFont ? " on" : ""}" data-font="">Auto</button>
+              ${Object.entries(D.FONTS).map(([k, f]) =>
+                `<button type="button" class="theme-chip${draft.titleFont === k ? " on" : ""}" data-font="${k}" style="font-family:${f.stack},sans-serif">${f.label}</button>`).join("")}
+            </div></div>
+          <div class="field mb-16"><span class="label">Effect <span class="faint">(what floats across the invite)</span></span>
+            <div class="theme-chips">
+              <button type="button" class="theme-chip${!draft.effectEmoji ? " on" : ""}" data-fx="">Theme default</button>
+              ${FX_PRESETS.map((p) =>
+                `<button type="button" class="theme-chip${draft.effectEmoji === p ? " on" : ""}" data-fx="${p}">${p}</button>`).join("")}
+              <input class="input" id="f-fx" placeholder="Your own emoji…" value="${!draft.effectEmoji || FX_PRESETS.includes(draft.effectEmoji) ? "" : esc(draft.effectEmoji)}" style="width:130px;padding:7px 12px">
             </div></div>
           <div class="field mb-16"><span class="label">Your photo <span class="faint">(optional)</span></span>
             <div id="f-photo-zone"></div>
@@ -1100,6 +1132,34 @@
             <input type="checkbox" class="switch" id="f-plus" ${draft.allowPlusOne ? "checked" : ""}>
           </label>
 
+          <details class="extras-details mb-16" ${ev && ev.extras && Object.values(ev.extras).some(Boolean) ? "open" : ""}>
+            <summary>＋ Extras <span class="faint">(dress code, playlist, registry, parking)</span></summary>
+            <div class="field-row mb-16" style="margin-top:12px">
+              <div class="field"><span class="label">👗 Dress code</span>
+                <input class="input" id="f-x-dress" placeholder="Garden chic" value="${xv("dressCode")}"></div>
+              <div class="field"><span class="label">🅿️ Parking</span>
+                <input class="input" id="f-x-parking" placeholder="Street parking on Rosewood" value="${xv("parking")}"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><span class="label">🎵 Playlist link</span>
+                <input class="input" id="f-x-playlist" type="url" placeholder="https://open.spotify.com/…" value="${xv("playlistUrl")}"></div>
+              <div class="field"><span class="label">🎁 Registry link</span>
+                <input class="input" id="f-x-registry" type="url" placeholder="https://…" value="${xv("registryUrl")}"></div>
+            </div>
+          </details>
+
+          <div class="field mb-16"><span class="label">Ask your guests a question <span class="faint">(optional)</span></span>
+            <input class="input" id="f-question" placeholder="Any dietary needs? Song requests?" value="${v("guestQuestion")}"></div>
+
+          <label class="switchrow mb-16" for="f-hideaddr">
+            <span><b style="font-size:.92rem">Hide exact address until they RSVP</b><br><span class="muted" style="font-size:.82rem">Guests see the address only after confirming.</span></span>
+            <input type="checkbox" class="switch" id="f-hideaddr" ${draft.hideAddress ? "checked" : ""}>
+          </label>
+          <label class="switchrow mb-16" for="f-showgoing">
+            <span><b style="font-size:.92rem">Show who's going on the invite</b><br><span class="muted" style="font-size:.82rem">After a guest replies, they see the headcount + first names.</span></span>
+            <input type="checkbox" class="switch" id="f-showgoing" ${draft.showGuests ? "checked" : ""}>
+          </label>
+
           <div class="field-row mb-24">
             <div class="field"><span class="label">Auto-nudge after</span>
               <select class="input" id="f-nudgeh">
@@ -1119,6 +1179,10 @@
         <div class="builder-preview reveal"><div id="inv-preview"></div></div>
       </div>`);
 
+    const collectExtras = () => ({
+      dressCode: val("f-x-dress"), playlistUrl: val("f-x-playlist"),
+      registryUrl: val("f-x-registry"), parking: val("f-x-parking"),
+    });
     const previewEvent = () => ({
       name: val("f-name") || "Your party",
       description: val("f-desc"),
@@ -1127,8 +1191,9 @@
       theme: draft.theme, palette: draft.palette,
       spots: draft.spots, allowPlusOne: draft.allowPlusOne,
       coverImageUrl: draft.coverImageUrl,
+      titleFont: draft.titleFont, effectEmoji: draft.effectEmoji,
+      extras: collectExtras(), hideAddress: draft.hideAddress,
       hostName: (host && host.name) || "You",
-      going: ev ? ev.counts.party : 0,
     });
     const paint = () => { document.getElementById("inv-preview").innerHTML = invitePreviewHTML(previewEvent()); };
     const paintPhoto = () => {
@@ -1163,6 +1228,28 @@
       app.querySelectorAll("[data-pal]").forEach((x) => x.classList.toggle("on", x === b));
       paint();
     }));
+    app.querySelectorAll("[data-font]").forEach((b) => b.addEventListener("click", () => {
+      draft.titleFont = b.dataset.font || null;
+      app.querySelectorAll("[data-font]").forEach((x) => x.classList.toggle("on", x === b));
+      paint();
+    }));
+    const fxInput = document.getElementById("f-fx");
+    app.querySelectorAll("[data-fx]").forEach((b) => b.addEventListener("click", () => {
+      draft.effectEmoji = b.dataset.fx || "";
+      fxInput.value = "";
+      app.querySelectorAll("[data-fx]").forEach((x) => x.classList.toggle("on", x === b));
+      paint();
+    }));
+    fxInput.addEventListener("input", () => {
+      // Keep only emoji (max 8) — InviteDesign.emojiList is grapheme-safe.
+      draft.effectEmoji = D.emojiList(fxInput.value).join("");
+      app.querySelectorAll("[data-fx]").forEach((x) => x.classList.toggle("on", !draft.effectEmoji && !x.dataset.fx));
+      paint();
+    });
+    document.getElementById("f-hideaddr").addEventListener("change", (e) => { draft.hideAddress = e.target.checked; paint(); });
+    document.getElementById("f-showgoing").addEventListener("change", (e) => { draft.showGuests = e.target.checked; });
+    ["f-x-dress", "f-x-playlist", "f-x-registry", "f-x-parking"].forEach((fid) =>
+      document.getElementById(fid).addEventListener("input", paint));
     document.getElementById("f-photo").addEventListener("change", (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
@@ -1193,6 +1280,9 @@
         theme: draft.theme, palette: draft.palette,
         spots: draft.spots, allowPlusOne: draft.allowPlusOne,
         coverImageUrl: draft.coverImageUrl,
+        titleFont: draft.titleFont, effectEmoji: draft.effectEmoji,
+        extras: collectExtras(), guestQuestion: val("f-question"),
+        hideAddress: draft.hideAddress, showGuests: draft.showGuests,
       };
       if (!data.name) return toast("Give your party a name", "err");
       const btn = document.getElementById("f-save");
@@ -1382,7 +1472,8 @@
       return `
       <tr data-guest="${g.id}" data-token="${esc(g.token)}">
         <td><div class="name">${esc(g.name || "—")}</div>
-          <div class="tel">${esc(contact)} ${channelChip(g.channel)}</div></td>
+          <div class="tel">${esc(contact)} ${channelChip(g.channel)}</div>
+          ${g.answer ? `<div class="tel" title="Their answer to your question">💬 ${esc(g.answer)}</div>` : ""}</td>
         <td class="tabular">${g.partySize > 1 ? g.partySize + " ppl" : "1"}</td>
         <td>${statusPill(g.status)}</td>
         <td class="muted" style="font-size:.82rem">${g.respondedAt ? "replied " + relTime(g.respondedAt) : g.invitedAt ? "invited " + relTime(g.invitedAt) : "not invited"}</td>
@@ -1596,6 +1687,7 @@
             <button class="btn ghost sm" data-close>${icon("x")}</button>
           </div>
           <div class="mt-8">${statusPill(g.status)}</div>
+          ${g.answer ? `<p class="tel mt-8" title="Their answer to your question">💬 “${esc(g.answer)}”</p>` : ""}
         </div>
         <div class="drawer-body">${thread}</div>
         <div class="drawer-foot">
