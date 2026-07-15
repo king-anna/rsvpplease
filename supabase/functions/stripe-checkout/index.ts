@@ -39,8 +39,10 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
+    // Self-registered guests (open invite link) are never texted → never billed.
     const { count } = await db.from("guests")
-      .select("*", { count: "exact", head: true }).eq("event_id", event_id);
+      .select("*", { count: "exact", head: true }).eq("event_id", event_id)
+      .eq("self_registered", false);
     const guestCount = count ?? 0;
 
     // Stripe Price IDs (one-time) — live and test each have their own $10 base

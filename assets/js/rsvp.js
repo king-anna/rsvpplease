@@ -4,11 +4,14 @@
    through the same Api seam (Phase 2: cross-device via Supabase).
    ========================================================================= */
 (function () {
-  const { esc, el, icon, toast } = window.UI;
+  const { esc, el, icon, toast, relTime } = window.UI;
   const root = document.getElementById("rsvp");
   const fmt = window.Api.fmtDate;
 
-  const token = new URLSearchParams(location.search).get("t");
+  // Personal invite (?t=), or the party's open link (?e= / /join/<open_token>).
+  let token = new URLSearchParams(location.search).get("t");
+  const openToken = new URLSearchParams(location.search).get("e") ||
+    (location.pathname.match(/^\/join\/([^/]+)\/?$/) || [])[1] || null;
 
   function notFound(msg) {
     root.innerHTML = `
@@ -109,6 +112,27 @@
     return `<div class="inv-going">🎉 ${event.goingCount} going${names ? ` · <span class="names">${esc(names)}</span>` : ""}</div>`;
   }
 
+  // The party wall — recent replies + comments, same gate as goingStrip.
+  function activityStrip(event) {
+    const acts = event.activity || [];
+    if (!acts.length) return "";
+    return `<div class="inv-activity">
+      <div class="inv-activity__t">Party wall</div>
+      ${acts.map((a) => `
+        <div class="inv-act">
+          <span class="inv-act__ic">${a.status === "confirmed" ? "🎉" : "😢"}</span>
+          <span class="inv-act__txt"><b>${esc(a.name)}</b> ${a.status === "confirmed" ? "is going" : "can't make it"}${a.note ? ` — <i>“${esc(a.note)}”</i>` : ""}</span>
+          <span class="inv-act__when">${a.at ? esc(relTime(a.at)) : ""}</span>
+        </div>`).join("")}
+    </div>`;
+  }
+
+  // Comment label depends on visibility: with "Show who's going" ON the note
+  // lands on the party wall, so guests must know it isn't private.
+  const noteLabel = (event) => event.showGuests
+    ? `Leave a comment 🎉 <span class="faint">(other guests can see it)</span>`
+    : `Note to host <span class="faint">(optional)</span>`;
+
   function renderInvite(guest, event) {
     let choice = null;
     root.innerHTML = `
@@ -148,7 +172,7 @@
               ${event.allowPlusOne === false ? "" : `
               <div class="field"><span class="label">How many in your party?</span>
                 <input class="input" id="r-party" type="number" min="1" value="${guest.partySize || 1}"></div>`}
-              <div class="field"><span class="label">Note to host <span class="faint">(optional)</span></span>
+              <div class="field"><span class="label">${noteLabel(event)}</span>
                 <input class="input" id="r-note" placeholder="Can't wait!"></div>
             </div>
             ${event.guestQuestion ? `
@@ -156,6 +180,7 @@
               <input class="input" id="r-answer" placeholder="Your answer" value="${esc(guest.answer || "")}"></div>` : ""}
           </div>
           ${goingStrip(event)}
+          ${activityStrip(event)}
           ${guest.status === "confirmed" ? calendarButtons(event) : ""}
 
           <button class="btn primary block lg" id="r-submit" disabled>Send my RSVP</button>
@@ -190,6 +215,134 @@
     });
   }
 
+  /* ---- Open invite (/join/<open_token>) — self-serve RSVP --------------- */
+  // Same themed invite, but the guest introduces themselves: name + phone.
+  // They arrive already-responded, so they're never texted an invite and
+  // never counted for billing (self_registered on the backend).
+  function renderOpenInvite(event) {
+    let choice = null;
+    root.innerHTML = `
+      <div class="card invite ticket reveal pad0">
+        ${inviteBanner(event)}
+        <div class="inv-body">
+          <p class="muted text-c" style="margin:0 0 14px">${esc(event.hostName || "Your host")} is gathering RSVPs — reply in seconds.</p>
+
+          <div class="mb-16">
+            ${detail("calendar", fmt(event.date))}
+            ${event.locationHidden
+              ? `<div class="detail-line">${icon("location")}<span class="faint">Address shared once you RSVP</span></div>`
+              : detail("location", event.location)}
+          </div>
+
+          ${extrasChips(event)}
+          ${event.description ? `<div class="host-note mb-16">${esc(event.description)}</div>` : ""}
+
+          <div class="field mb-16">
+            <span class="label">Will you be there?</span>
+            <div class="big-choice big-choice--orbs">
+              <button class="choice--orb yes" data-c="confirmed">
+                <span class="choice__emo">${window.InviteDesign.choiceEmoji(event).yes}</span>
+                <span class="big">Yes</span>
+                <span class="choice__sub">Count me in</span>
+              </button>
+              <button class="choice--orb no" data-c="declined">
+                <span class="choice__emo">${window.InviteDesign.choiceEmoji(event).no}</span>
+                <span class="big">Can't make it</span>
+                <span class="choice__sub">Maybe next time</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="extra" class="hide">
+            <div class="field-row mb-16">
+              <div class="field"><span class="label">Your name</span>
+                <input class="input" id="r-name" placeholder="Sam Rivera" autocomplete="name"></div>
+              <div class="field"><span class="label">Phone number</span>
+                <input class="input" id="r-phone" type="tel" inputmode="tel" placeholder="+15551234567" autocomplete="tel"></div>
+            </div>
+            <p class="help" style="margin:-8px 0 14px">For event updates from your host — no spam.</p>
+            <!-- honeypot: humans never see or fill this -->
+            <input class="input hp-field" id="r-website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div id="extra-yes" class="hide">
+              <div class="${event.allowPlusOne === false ? "field" : "field-row"} mb-16">
+                ${event.allowPlusOne === false ? "" : `
+                <div class="field"><span class="label">How many in your party?</span>
+                  <input class="input" id="r-party" type="number" min="1" value="1"></div>`}
+                <div class="field"><span class="label">${noteLabel(event)}</span>
+                  <input class="input" id="r-note" placeholder="Can't wait!"></div>
+              </div>
+              ${event.guestQuestion ? `
+              <div class="field mb-16"><span class="label">${esc(event.guestQuestion)}</span>
+                <input class="input" id="r-answer" placeholder="Your answer"></div>` : ""}
+            </div>
+          </div>
+
+          <button class="btn primary block lg" id="r-submit" disabled>Send my RSVP</button>
+          <p class="help text-c mt-16">Powered by RSVP<b>please</b></p>
+        </div>
+      </div>`;
+
+    const extra = document.getElementById("extra");
+    const extraYes = document.getElementById("extra-yes");
+    const submit = document.getElementById("r-submit");
+
+    // Clean the phone as they type — spaces/brackets stripped, leading + forced.
+    const phoneEl = document.getElementById("r-phone");
+    phoneEl.addEventListener("input", () => {
+      let s = phoneEl.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+      if (s && s[0] !== "+") s = "+" + s;
+      if (s !== phoneEl.value) {
+        const atEnd = phoneEl.selectionStart === phoneEl.value.length;
+        phoneEl.value = s;
+        if (atEnd) phoneEl.setSelectionRange(s.length, s.length);
+      }
+    });
+
+    root.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => {
+      choice = b.dataset.c;
+      root.querySelectorAll("[data-c]").forEach((c) => c.classList.remove("sel"));
+      b.classList.add("sel");
+      extra.classList.remove("hide");
+      extraYes.classList.toggle("hide", choice !== "confirmed");
+      submit.disabled = false;
+      submit.textContent = choice === "confirmed" ? "Yes, I'll be there 🎉" : "Send my reply";
+    }));
+
+    submit.addEventListener("click", async () => {
+      if (!choice) return;
+      const name = (document.getElementById("r-name").value || "").trim();
+      const phone = (phoneEl.value || "").trim();
+      if (!name) return toast("Please tell us your name", "err");
+      if (phone.replace(/\D/g, "").length < 7) return toast("Please add a valid phone number", "err");
+      submit.disabled = true;
+      try {
+        const res = await window.Api.openRsvp(openToken, {
+          name, phone, status: choice,
+          partySize: document.getElementById("r-party")?.value,
+          note: document.getElementById("r-note")?.value,
+          answer: document.getElementById("r-answer")?.value,
+          hp: document.getElementById("r-website")?.value,
+        });
+        if (res.token) {
+          // Continue as this guest: their personal link becomes the URL, so a
+          // refresh (or bookmark) keeps their RSVP state.
+          token = res.token;
+          const q = new URLSearchParams(location.search);
+          q.delete("e"); q.set("t", res.token);
+          history.replaceState(null, "", "/rsvp.html?" + q.toString());
+          let fresh = null;
+          try { fresh = await window.Api.getGuestByToken(res.token); } catch (e) { /* keep event */ }
+          renderDone(choice, (fresh && fresh.event) || event, (fresh && fresh.guest) || { name }, res.autoReply);
+        } else {
+          renderDone(choice, event, { name }, res.autoReply);
+        }
+      } catch (e) {
+        toast(e.message || "Couldn't send your RSVP", "err");
+        submit.disabled = false;
+      }
+    });
+  }
+
   function renderDone(choice, event, guest, autoReply) {
     const yes = choice === "confirmed";
     root.innerHTML = `
@@ -210,6 +363,7 @@
           </div>` : ""}
           ${yes ? calendarButtons(event) : ""}
           ${goingStrip(event)}
+          ${activityStrip(event)}
           ${autoReply ? `
             <div class="phone" style="width:100%;background:transparent;box-shadow:none;border:none;padding:0">
               <div class="bubble" style="margin:0 auto">${esc(autoReply)}<div class="meta">From ${esc(event.name)}</div></div>
@@ -221,13 +375,23 @@
   }
 
   async function init() {
-    if (!token) return notFound("No invitation code in this link.");
-    const found = await window.Api.getGuestByToken(token);
-    if (!found || !found.event) return notFound();
-    paintPage(found.event);
-    // Already-replied guests land here too — they can update their answer, and
-    // (having responded) they see the going list / revealed address if enabled.
-    renderInvite(found.guest, found.event);
+    if (token) {
+      const found = await window.Api.getGuestByToken(token);
+      if (!found || !found.event) return notFound();
+      paintPage(found.event);
+      // Already-replied guests land here too — they can update their answer, and
+      // (having responded) they see the going list / revealed address if enabled.
+      renderInvite(found.guest, found.event);
+      return;
+    }
+    if (openToken) {
+      const found = await window.Api.getOpenInvite(openToken);
+      if (!found || !found.event) return notFound("This party link looks broken or the party has ended.");
+      paintPage(found.event);
+      renderOpenInvite(found.event);
+      return;
+    }
+    notFound("No invitation code in this link.");
   }
 
   init();

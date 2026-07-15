@@ -8,3 +8,7 @@
 # rewrite to /blog.html gets bounced with a 308 to /blog — which drops the slug
 # and lands every post back on the blog index. Rewriting to /blog avoids that.
 /blog/*   /blog   200
+
+# Open invite links: /join/<open_token> serves the RSVP shell (extensionless
+# target for the same 308 reason; rsvp.js reads the token from the path).
+/join/*   /rsvp   200

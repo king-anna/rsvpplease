@@ -862,7 +862,7 @@
     const archived = events.filter((e) => e.archived);
     const paidList = live.filter((e) => e.paidAt);
     const freeList = live.filter((e) => !e.paidAt);
-    const totalCents = paidList.reduce((n, e) => n + window.Api.priceFor(e.counts.total).totalCents, 0);
+    const totalCents = paidList.reduce((n, e) => n + window.Api.priceFor(e.counts.chargeable ?? e.counts.total).totalCents, 0);
     const sub = `${esc(host && host.name ? host.name : "Your account")} · ${live.length} ${live.length === 1 ? "party" : "parties"} · ${paidList.length} on SMS${freeList.length ? ` · ${freeList.length} link-only` : ""}${archived.length ? ` · ${archived.length} archived` : ""}`;
 
     let body;
@@ -983,7 +983,7 @@
     const paid = !!ev.paidAt;
     const okW = c.total ? (c.confirmed / c.total) * 100 : 0;
     const noW = c.total ? (c.declined / c.total) * 100 : 0;
-    const priceLabel = paid ? money(window.Api.priceFor(c.total).totalCents) : "Free";
+    const priceLabel = paid ? money(window.Api.priceFor(c.chargeable ?? c.total).totalCents) : "Free";
     const meta = [fmt(ev.date), ev.location ? esc(ev.location) : null].filter(Boolean).join(" · ");
     return `
       <div class="party-card reveal${ev.archived ? " archived" : ""}" data-ev="${ev.id}" role="button" tabindex="0" aria-label="Open ${esc(ev.name)}">
@@ -1310,7 +1310,9 @@
     if (!ev) { go("#/events"); return; }
     const guests = await window.Api.listGuests(id);
     const c = ev.counts;
-    const uninvited = guests.filter((g) => !g.invitedAt).length;
+    const uninvited = guests.filter((g) => !g.invitedAt && !g.selfRegistered).length;
+    // Billable = host-added guests; open-link joiners are never texted/billed.
+    const billable = guests.filter((g) => !g.selfRegistered).length;
 
     const sendPanel = (() => {
       // Comped accounts (granted by an admin) send for free.
@@ -1320,26 +1322,26 @@
             <div class="row between wrap gap-16">
               <div>
                 <span class="pill ok"><span class="dot"></span>Comped · sending is free</span>
-                <p class="muted mt-8" style="font-size:.9rem">${guests.length - uninvited} of ${guests.length} guests invited.</p>
+                <p class="muted mt-8" style="font-size:.9rem">${billable - uninvited} of ${billable} guests invited.</p>
               </div>
               ${uninvited && guests.length ? `<button class="btn primary lg" id="ev-sendnew">${icon("send")} Send ${uninvited} invite${uninvited === 1 ? "" : "s"}</button>` : ""}
             </div>
           </div>`;
       }
       if (!ev.paidAt) {
-        const price = window.Api.priceFor(guests.length);
+        const price = window.Api.priceFor(billable);
         const extraTxt = price.extra > 0 ? ` + ${money(price.per)} × ${price.extra} extra` : "";
         const hint = guests.length ? "" : `<p class="muted mt-8" style="font-size:.86rem">Add guests below to unlock both options.</p>`;
         return `
           <div class="card reveal">
-            <div class="eyebrow">Ready to invite ${guests.length} guest${guests.length === 1 ? "" : "s"}</div>
+            <div class="eyebrow">Ready to invite ${billable} guest${billable === 1 ? "" : "s"}</div>
             ${hint}
             <div class="send-opts mt-16">
               <div class="send-opt">
                 <span class="pill">Free</span>
                 <h4>Share the links yourself</h4>
                 <p class="muted">Copy each guest's RSVP link and drop it in your group chat, WhatsApp or email. Track replies live — no charge, ever.</p>
-                <button class="btn soft" id="ev-share" ${guests.length ? "" : "disabled"}>${icon("link")} Copy RSVP links</button>
+                <button class="btn soft" id="ev-share">${icon("link")} Share your party link</button>
               </div>
               <div class="send-opt send-opt--pay">
                 <span class="pill rose">SMS · ${money(price.totalCents)}</span>
@@ -1358,7 +1360,7 @@
       const paidExtra = Math.max(0, paidCount - p0.included);
       const billedCents = p0.base + paidExtra * p0.per;
       const newExtra = host.comped ? 0
-        : Math.max(0, Math.max(0, guests.length - p0.included) - Math.max(0, paidCount - p0.included));
+        : Math.max(0, Math.max(0, billable - p0.included) - Math.max(0, paidCount - p0.included));
       const owed = newExtra * p0.per;
       const newBtn = !uninvited ? ""
         : owed > 0
@@ -1369,7 +1371,7 @@
           <div class="row between wrap gap-16">
             <div>
               <div class="activate-card__head">${icon("chat")} SMS nudges active</div>
-              <p class="muted mt-8" style="font-size:.9rem">RSVPplease is texting invites &amp; nudges. ${guests.length - uninvited} of ${guests.length} guests invited.${owed > 0 ? ` <b style="color:var(--rose-deep)">${newExtra} new beyond your first ${p0.included} — ${money(owed)} to text.</b>` : ""}</p>
+              <p class="muted mt-8" style="font-size:.9rem">RSVPplease is texting invites &amp; nudges. ${billable - uninvited} of ${billable} guests invited.${owed > 0 ? ` <b style="color:var(--rose-deep)">${newExtra} new beyond your first ${p0.included} — ${money(owed)} to text.</b>` : ""}</p>
             </div>
             ${newBtn}
           </div>
@@ -1472,7 +1474,7 @@
       return `
       <tr data-guest="${g.id}" data-token="${esc(g.token)}">
         <td><div class="name">${esc(g.name || "—")}</div>
-          <div class="tel">${esc(contact)} ${channelChip(g.channel)}</div>
+          <div class="tel">${esc(contact)} ${channelChip(g.channel)}${g.selfRegistered ? ` <span class="pill" style="font-size:.64rem;padding:2px 8px" title="Joined through your party link — never texted, never billed">via link</span>` : ""}</div>
           ${g.answer ? `<div class="tel" title="Their answer to your question">💬 ${esc(g.answer)}</div>` : ""}</td>
         <td class="tabular">${g.partySize > 1 ? g.partySize + " ppl" : "1"}</td>
         <td>${statusPill(g.status)}</td>
@@ -1566,10 +1568,11 @@
           const active = !!ev.paidAt || (host && host.comped);
           if (active) {
             const guests = await window.Api.listGuests(eventId);
+            const billable = guests.filter((g) => !g.selfRegistered).length;
             const p0 = window.Api.priceFor(0);
             const paidCount = ev.guestCountAtPayment || 0;
             const owedExtra = (host && host.comped) ? 0
-              : Math.max(0, Math.max(0, guests.length - p0.included) - Math.max(0, paidCount - p0.included));
+              : Math.max(0, Math.max(0, billable - p0.included) - Math.max(0, paidCount - p0.included));
             if (owedExtra === 0) {
               try {
                 const r = await window.Api.sendInvites(eventId);
@@ -1589,9 +1592,18 @@
   }
 
   /* ---- Share links modal (the free path — host sends links themselves) - */
+  // The party's open link — anyone who opens it RSVPs with their name + phone
+  // and lands on the guest list (marked "via link"; never texted, never billed).
+  function openInviteLink(ev) {
+    if (!ev || !ev.openToken) return "";
+    return window.Api.isBackendLive()
+      ? `${location.origin}/join/${ev.openToken}`
+      : new URL("rsvp.html?backend=local&e=" + encodeURIComponent(ev.openToken), window.location.href).href;
+  }
   async function shareLinksModal(eventId) {
-    const guests = await window.Api.listGuests(eventId);
-    if (!guests.length) { toast("Add some guests first", "err"); return; }
+    const [guests, ev] = await Promise.all([window.Api.listGuests(eventId), window.Api.getEvent(eventId)]);
+    const openUrl = openInviteLink(ev);
+    if (!guests.length && !openUrl) { toast("Add some guests first", "err"); return; }
     const linkFor = (g) => window.Api.rsvpLink(g.token);
     const rows = guests.map((g) => `
       <div class="share-row">
@@ -1603,16 +1615,26 @@
       </div>`).join("");
     const allText = guests.map((g) => `${g.name || "Guest"}: ${linkFor(g)}`).join("\n");
     const body = el(`<div>
-      <div class="notice rose">${icon("info")}<span>Sharing is free. Send these however you like — text, WhatsApp, email. Replies land on your guest list in real time. No charge.</span></div>
-      <div class="share-list mt-16">${rows}</div>`);
+      ${openUrl ? `
+      <div class="share-open">
+        <div class="share-open__head">${icon("spark")} <b>One link for everyone</b> <span class="pill" style="font-size:.64rem;padding:2px 8px">NEW</span></div>
+        <p class="muted" style="font-size:.86rem;margin:6px 0 10px">Drop this in the group chat — anyone who opens it RSVPs with their name and number and lands on your guest list. They're never texted or billed.</p>
+        <div class="share-row">
+          <div class="share-row__who"><div class="tel">${esc(openUrl)}</div></div>
+          <button class="btn primary sm" data-link="${esc(openUrl)}">${icon("link")} Copy</button>
+        </div>
+      </div>` : ""}
+      ${guests.length ? `
+      <div class="notice rose${openUrl ? " mt-16" : ""}">${icon("info")}<span>Or send each guest their personal link — text, WhatsApp, email. Replies land on your guest list in real time. No charge.</span></div>
+      <div class="share-list mt-16">${rows}</div>` : ""}`);
     body.querySelectorAll("[data-link]").forEach((b) =>
       b.addEventListener("click", () => { copy(b.getAttribute("data-link")); toast("Link copied", "ok"); }));
     modal({
-      title: "Share RSVP links",
+      title: "Share your party",
       body,
       actions: [
         { label: "Close", cls: "ghost", onClick: (c) => c() },
-        { label: `Copy all ${guests.length} links`, cls: "primary", onClick: (c) => { copy(allText); toast("All links copied", "ok"); c(); } },
+        ...(guests.length ? [{ label: `Copy all ${guests.length} links`, cls: "primary", onClick: (c) => { copy(allText); toast("All links copied", "ok"); c(); } }] : []),
       ],
     });
   }
@@ -1623,12 +1645,14 @@
   //  head, no second base fee. If the new guests fit the allowance, $0 (just send).
   function billingModal(eventId) {
     Promise.all([window.Api.listGuests(eventId), window.Api.getEvent(eventId)]).then(([guests, ev]) => {
-      const p = window.Api.priceFor(guests.length);
+      // Self-registered (open-link) guests are never texted → never billed.
+      const billable = guests.filter((g) => !g.selfRegistered).length;
+      const p = window.Api.priceFor(billable);
       const isTopup = !!(ev && ev.paidAt);
       let totalCents, lines;
       if (isTopup) {
         const paidCount = (ev.guestCountAtPayment) || 0;
-        const newExtra = Math.max(0, Math.max(0, guests.length - p.included) - Math.max(0, paidCount - p.included));
+        const newExtra = Math.max(0, Math.max(0, billable - p.included) - Math.max(0, paidCount - p.included));
         totalCents = p.per * newExtra;
         lines = `
           <div class="price-line"><span>Already paid <span class="faint">(up to ${Math.max(paidCount, p.included)} guests)</span></span><span class="tabular faint">paid</span></div>

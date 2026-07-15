@@ -1242,6 +1242,26 @@ body.rsvp-dark .inv-extra{background:rgba(255,255,255,.07);}
 body.rsvp-dark .inv-going{background:rgba(63,157,107,.18);color:#8FE0B4;}
 .inv-going .names{color:inherit;opacity:.85;font-weight:500;}
 
+/* Party wall (activity) — same gate as the going strip. */
+.inv-activity{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);
+  background:var(--surface-soft);border:1px solid var(--line);text-align:left;}
+body.rsvp-dark .inv-activity{background:rgba(255,255,255,.06);}
+.inv-activity__t{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:8px;}
+.inv-act{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:.9rem;color:var(--ink-soft);}
+.inv-act + .inv-act{border-top:1px dashed var(--line);}
+.inv-act__txt{flex:1;min-width:0;}
+.inv-act__txt b{color:var(--ink);}
+.inv-act__when{font-size:.76rem;color:var(--ink-faint);white-space:nowrap;}
+
+/* "One link for everyone" block in the share modal. */
+.share-open{border:1.5px solid var(--brand-soft, #fbd0dc);background:var(--rose-soft);border-radius:var(--r);padding:14px 16px;}
+.share-open__head{display:flex;align-items:center;gap:7px;color:var(--rose-deep);font-size:.95rem;}
+.share-open .share-row{background:var(--surface);}
+
+/* Honeypot — visually gone, still in the DOM for bots to fill. */
+.hp-field{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0;pointer-events:none;}
+
 @media (prefers-reduced-motion:reduce){.inv-motif,.inv-motif *,.inv-pagefx *{animation:none!important;}.inv-shine::before{display:none;}.inv-hearts span,.inv-fairytale span,.inv-emojifx span{opacity:.85;}}
 
 /* ===== Blog (marketing · webhook-fed posts) ===== */

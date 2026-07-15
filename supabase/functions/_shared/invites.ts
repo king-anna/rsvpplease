@@ -11,7 +11,10 @@ import { sendEmail } from "./resend.ts";
 export async function dispatchInvites(db: SupabaseClient, event: any, hostName: string) {
   const { data: tplRow } = await db.from("templates").select("data").eq("event_id", event.id).maybeSingle();
   const tpl = mergeDefaults(tplRow?.data);
-  const { data: guests } = await db.from("guests").select("*").eq("event_id", event.id).is("invited_at", null);
+  // Self-registered guests (open invite link) already RSVP'd on the page —
+  // they never get an invite text and are never billed.
+  const { data: guests } = await db.from("guests").select("*").eq("event_id", event.id)
+    .is("invited_at", null).eq("self_registered", false);
 
   let sent = 0;
   const errors: string[] = [];

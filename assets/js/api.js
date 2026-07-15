@@ -70,17 +70,29 @@
   /* ---- Counts ---------------------------------------------------------- */
   function countsFor(eventId, db) {
     const gs = Object.values(db.guests).filter((g) => g.eventId === eventId);
-    const c = { total: gs.length, confirmed: 0, declined: 0, pending: 0, party: 0 };
+    // `chargeable` = host-added guests (self-registered open-link guests are
+    // never texted, so never billed).
+    const c = { total: gs.length, confirmed: 0, declined: 0, pending: 0, party: 0, chargeable: 0 };
     for (const g of gs) {
       if (g.status === "confirmed") { c.confirmed++; c.party += g.partySize || 1; }
       else if (g.status === "declined") c.declined++;
       else c.pending++;
+      if (!g.selfRegistered) c.chargeable++;
     }
     return c;
   }
 
   function decorateEvent(ev, db) {
     return Object.assign({}, ev, { counts: countsFor(ev.id, db) });
+  }
+
+  // Events stored before the open-invite feature get a shareable token lazily.
+  function ensureOpenTokens(db) {
+    let changed = false;
+    for (const e of Object.values(db.events)) {
+      if (!e.openToken) { e.openToken = window.Store.uid("j") + window.Store.uid(""); changed = true; }
+    }
+    if (changed) window.Store.save(db);
   }
 
   /* ---- Local (Phase 1) implementation ---------------------------------- */
@@ -113,12 +125,14 @@
     /* Events */
     async listEvents() {
       const db = window.Store.load();
+      ensureOpenTokens(db);
       return Object.values(db.events)
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .map((ev) => decorateEvent(ev, db));
     },
     async getEvent(id) {
       const db = window.Store.load();
+      ensureOpenTokens(db);
       const ev = db.events[id];
       return ev ? decorateEvent(ev, db) : null;
     },
@@ -147,6 +161,7 @@
         guestQuestion: data.guestQuestion || "",
         hideAddress: !!data.hideAddress,
         showGuests: !!data.showGuests,
+        openToken: window.Store.uid("j") + window.Store.uid(""),
         templates: Object.assign({}, DEFAULT_TEMPLATES),
         status: "draft",
         paidAt: null,
@@ -193,12 +208,87 @@
       const showSocial = !!ev.showGuests && responded;
       const confirmed = Object.values(db.guests)
         .filter((g) => g.eventId === ev.id && g.status === "confirmed");
+      const respondedGuests = Object.values(db.guests)
+        .filter((g) => g.eventId === ev.id && (g.status === "confirmed" || g.status === "declined") && g.respondedAt)
+        .sort((a, b) => b.respondedAt - a.respondedAt);
       return { guest, event: Object.assign({}, ev, {
         location: locationHidden ? "" : ev.location,
         locationHidden,
         goingCount: showSocial ? confirmed.reduce((s, g) => s + (Number(g.partySize) || 1), 0) : null,
         goingNames: showSocial ? confirmed.slice(0, 8).map((g) => ((g.name || "").trim() || "A guest").split(/\s+/)[0]) : [],
+        activity: showSocial ? respondedGuests.slice(0, 8).map((g) => ({
+          name: ((g.name || "").trim() || "A guest").split(/\s+/)[0],
+          status: g.status, note: (g.note || "").trim(), at: g.respondedAt,
+        })) : [],
       }) };
+    },
+    // Open invite (/join/<open_token>): the party view for someone not yet on
+    // the guest list. No address (when hidden) and no social data — they
+    // haven't responded. Older stored events get a token lazily.
+    async getOpenInvite(openToken) {
+      const db = window.Store.load();
+      ensureOpenTokens(db);
+      const ev = Object.values(db.events).find((e) => e.openToken === openToken && !e.archived);
+      if (!ev) return null;
+      return { event: Object.assign({}, ev, {
+        location: ev.hideAddress ? "" : ev.location,
+        locationHidden: !!ev.hideAddress,
+        goingCount: null, goingNames: [], activity: [],
+      }) };
+    },
+    // Self-serve RSVP with the same guards as the backend: honeypot pretends
+    // success, phone must be 7–15 digits, 300-signup cap, dedupe by last-10
+    // digits (repeat submits update the same guest).
+    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp }) {
+      if ((hp || "").trim()) return { ok: true, token: null, autoReply: "" };
+      const db = window.Store.load();
+      const ev = Object.values(db.events).find((e) => e.openToken === openToken && !e.archived);
+      if (!ev) throw new Error("Invite not found");
+      if (!(name || "").trim()) throw new Error("Please tell us your name");
+      const digits = (phone || "").replace(/\D/g, "");
+      if (digits.length < 7 || digits.length > 15) throw new Error("Please add a valid phone number");
+      const regs = Object.values(db.guests).filter((g) => g.eventId === ev.id && g.selfRegistered);
+      if (regs.length >= 300) throw new Error("This party is not accepting more sign-ups");
+      const now = Date.now();
+
+      let g = Object.values(db.guests).find((x) =>
+        x.eventId === ev.id && (x.phone || "").replace(/\D/g, "").slice(-10) === digits.slice(-10));
+      if (g) {
+        g.status = status;
+        g.respondedAt = now;
+        g.name = (g.name || "").trim() || name.trim();
+        if (status === "confirmed" && partySize) g.partySize = Math.max(1, Math.min(20, Number(partySize) || 1));
+        if ((note || "").trim()) g.note = note.trim();
+        if ((answer || "").trim()) g.answer = answer.trim();
+      } else {
+        const id = window.Store.uid("g");
+        g = {
+          id, eventId: ev.id, name: name.trim().slice(0, 80), phone: "+" + digits,
+          email: "", channel: "sms",
+          partySize: status === "confirmed" ? Math.max(1, Math.min(20, Number(partySize) || 1)) : 1,
+          status, token: window.Store.uid("t") + window.Store.uid(""),
+          note: (note || "").trim(), answer: (answer || "").trim(),
+          selfRegistered: true, invitedAt: null, respondedAt: now,
+          nudgeCount: 0, lastNudgeAt: null, createdAt: now,
+        };
+        db.guests[id] = g;
+      }
+
+      db.messages[window.Store.uid("m")] = {
+        id: window.Store.uid("m"), eventId: ev.id, guestId: g.id,
+        direction: "in", kind: "rsvp",
+        body: (status === "confirmed" ? "✅ Confirmed via open invite" : "🙅 Declined via open invite") +
+          ((note || "").trim() ? ` — “${note.trim()}”` : ""),
+        createdAt: now,
+      };
+      const tplKey = status === "confirmed" ? "replyYes" : "replyNo";
+      const replyBody = render(ev.templates[tplKey], { guest: g, event: ev, host: db.host });
+      db.messages[window.Store.uid("m")] = {
+        id: window.Store.uid("m"), eventId: ev.id, guestId: g.id,
+        direction: "out", kind: tplKey, body: replyBody, createdAt: now + 1,
+      };
+      window.Store.save(db);
+      return { ok: true, token: g.token, autoReply: replyBody };
     },
     async addGuests(eventId, list) {
       const db = window.Store.load();
@@ -299,7 +389,8 @@
       const db = window.Store.load();
       const ev = db.events[eventId];
       if (!ev) throw new Error("Event not found");
-      const count = countsFor(eventId, db).total;
+      // Only host-added guests are billed — open-link joiners don't count.
+      const count = countsFor(eventId, db).chargeable;
       ev.status = "active";
       ev.paidAt = Date.now();
       ev.guestCountAtPayment = count;
@@ -313,7 +404,8 @@
       const ev = db.events[eventId];
       if (!ev) throw new Error("Event not found");
       if (!ev.paidAt) throw new Error("PAYMENT_REQUIRED");
-      const gs = Object.values(db.guests).filter((g) => g.eventId === eventId && !g.invitedAt);
+      // Open-link joiners already RSVP'd on the page — never texted an invite.
+      const gs = Object.values(db.guests).filter((g) => g.eventId === eventId && !g.invitedAt && !g.selfRegistered);
       const now = Date.now();
       let sent = 0;
       gs.forEach((g, i) => {

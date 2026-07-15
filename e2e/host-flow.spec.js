@@ -67,8 +67,8 @@ test("existing account: full host journey (create → share → RSVP → SMS →
   let rsvpToken;
   await test.step("free path: share-links modal exposes a unique link per guest", async () => {
     await page.click("#ev-share");
-    await expect(page.locator(".share-row")).toHaveCount(GUESTS);
-    const link = await page.locator(".share-row [data-link]").first().getAttribute("data-link");
+    await expect(page.locator(".share-list .share-row")).toHaveCount(GUESTS); // per-guest rows (the open-link block has its own row)
+    const link = await page.locator(".share-list .share-row [data-link]").first().getAttribute("data-link");
     rsvpToken = new URL(link).searchParams.get("t");
     expect(rsvpToken).toBeTruthy();
     await page.locator(".modal-foot button", { hasText: "Close" }).click();
@@ -100,6 +100,30 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await card.click();
     await expect(page.locator(".stats .stat.ok .n")).toHaveText("1"); // confirmed
     await expect(page.locator("tr[data-guest]").first()).toContainText("Gluten-free"); // question answer
+  });
+
+  await test.step("open invite link: stranger self-RSVPs, never billed", async () => {
+    // grab the party's open link from the share modal
+    await page.click("#ev-share");
+    const openUrl = await page.locator(".share-open [data-link]").getAttribute("data-link");
+    expect(openUrl).toContain("e=");
+    await page.locator(".modal-foot button", { hasText: "Close" }).click();
+
+    // a stranger opens it and registers themselves
+    await page.goto(openUrl);
+    await page.click(".choice--orb.yes");
+    await page.fill("#r-name", "Riley Openlink");
+    await page.fill("#r-phone", "+1 555 000 (7777)"); // gets cleaned live
+    await expect(page.locator("#r-phone")).toHaveValue("+15550007777");
+    await page.click("#r-submit");
+    await expect(page.locator(".invite h2")).toHaveText("You're on the list!");
+
+    // host sees them badged "via link"; the SMS price ignores them entirely
+    await page.goto(`${LOCAL}#/events`);
+    await page.locator(".party-card").click();
+    const riley = page.locator("tr[data-guest]", { hasText: "Riley Openlink" });
+    await expect(riley).toContainText("via link");
+    await expect(page.locator(".send-opt--pay .pill")).toContainText(`SMS · ${TOTAL}`);
   });
 
   await test.step(`activate SMS nudges — ${TOTAL} for ${GUESTS} guests`, async () => {

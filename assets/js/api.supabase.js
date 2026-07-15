@@ -23,11 +23,14 @@
 
   function countsFromGuests(gs) {
     gs = gs || [];
-    const c = { total: gs.length, confirmed: 0, declined: 0, pending: 0, party: 0 };
+    // `chargeable` = host-added guests (self-registered open-link guests are
+    // never texted, so never billed).
+    const c = { total: gs.length, confirmed: 0, declined: 0, pending: 0, party: 0, chargeable: 0 };
     for (const g of gs) {
       if (g.status === "confirmed") { c.confirmed++; c.party += g.party_size || 1; }
       else if (g.status === "declined") c.declined++;
       else c.pending++;
+      if (!g.self_registered) c.chargeable++;
     }
     return c;
   }
@@ -42,13 +45,31 @@
     titleFont: r.title_font || null, effectEmoji: r.effect_emoji || "",
     extras: r.extras || {}, guestQuestion: r.guest_question || "",
     hideAddress: !!r.hide_address, showGuests: !!r.show_guests,
+    openToken: r.open_token || "",
     createdAt: ts(r.created_at) || 0,
     counts: countsFromGuests(r.guests),
+  });
+  // Guest-page event shape shared by rsvp_get and rsvp_open_get payloads.
+  const rpcEvent = (ev) => ({
+    name: ev.name, description: ev.description || "", date: ev.event_date || "",
+    location: ev.location || "", locationHidden: !!ev.location_hidden,
+    hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "",
+    theme: ev.theme || "confetti", palette: ev.palette || "blush",
+    spots: ev.spots || null, allowPlusOne: ev.allow_plus_one !== false,
+    titleFont: ev.title_font || null, effectEmoji: ev.effect_emoji || "",
+    extras: ev.extras || {}, guestQuestion: ev.guest_question || "",
+    showGuests: !!ev.show_guests,
+    goingCount: ev.going_count == null ? null : Number(ev.going_count),
+    goingNames: Array.isArray(ev.going_names) ? ev.going_names : [],
+    activity: Array.isArray(ev.activity)
+      ? ev.activity.map((a) => ({ name: a.name || "A guest", status: a.status, note: a.note || "", at: ts(a.at) }))
+      : [],
   });
   const guestFromRow = (g) => ({
     id: g.id, eventId: g.event_id, name: g.name || "", phone: g.phone || "",
     email: g.email || "", channel: g.channel || "sms", partySize: g.party_size || 1,
     status: g.status || "pending", token: g.token, note: g.note || "", answer: g.answer || "",
+    selfRegistered: !!g.self_registered,
     invitedAt: ts(g.invited_at), respondedAt: ts(g.responded_at),
     nudgeCount: g.nudge_count || 0, lastNudgeAt: ts(g.last_nudge_at), createdAt: ts(g.created_at) || 0,
   });
@@ -122,13 +143,13 @@
     /* Events */
     async listEvents() {
       const { data, error } = await sb.from("events")
-        .select("*, guests(status, party_size)").order("created_at", { ascending: false });
+        .select("*, guests(status, party_size, self_registered)").order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map(evFromRow);
     },
     async getEvent(id) {
       const { data, error } = await sb.from("events")
-        .select("*, guests(status, party_size)").eq("id", id).maybeSingle();
+        .select("*, guests(status, party_size, self_registered)").eq("id", id).maybeSingle();
       if (error) throw error;
       return data ? evFromRow(data) : null;
     },
@@ -160,7 +181,7 @@
         guestQuestion: "guest_question", hideAddress: "hide_address", showGuests: "show_guests" };
       for (const k in map) if (k in p) row[map[k]] = (p[k] === "" && /date|deadline/i.test(k)) ? null : p[k];
       const { data, error } = await sb.from("events").update(row).eq("id", id)
-        .select("*, guests(status, party_size)").single();
+        .select("*, guests(status, party_size, self_registered)").single();
       if (error) throw error;
       return evFromRow(data);
     },
@@ -190,17 +211,23 @@
       return {
         guest: { name: g.name, partySize: g.party_size, status: g.status, respondedAt: ts(g.responded_at),
           answer: g.answer || "", token },
-        event: { name: ev.name, description: ev.description || "", date: ev.event_date || "",
-          location: ev.location || "", locationHidden: !!ev.location_hidden,
-          hostName: ev.host_name || "your host", coverImageUrl: ev.cover_image_url || "",
-          theme: ev.theme || "confetti", palette: ev.palette || "blush",
-          spots: ev.spots || null, allowPlusOne: ev.allow_plus_one !== false,
-          titleFont: ev.title_font || null, effectEmoji: ev.effect_emoji || "",
-          extras: ev.extras || {}, guestQuestion: ev.guest_question || "",
-          showGuests: !!ev.show_guests,
-          goingCount: ev.going_count == null ? null : Number(ev.going_count),
-          goingNames: Array.isArray(ev.going_names) ? ev.going_names : [] },
+        event: rpcEvent(ev),
       };
+    },
+    async getOpenInvite(openToken) {
+      const { data, error } = await sb.rpc("rsvp_open_get", { p_open_token: openToken });
+      if (error || !data || !data.event) return null;
+      return { event: rpcEvent(data.event) };
+    },
+    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp }) {
+      const { data, error } = await sb.rpc("rsvp_open_submit", {
+        p_open_token: openToken, p_name: name, p_phone: phone, p_status: status,
+        p_party: partySize ? Number(partySize) : null, p_note: note || null,
+        p_answer: answer || null, p_hp: hp || null,
+      });
+      if (error) throw error;
+      if (data && data.token) sb.functions.invoke("notify-host", { body: { token: data.token } }).catch(() => {});
+      return { ok: true, token: (data && data.token) || null, autoReply: (data && data.auto_reply) || "" };
     },
     async addGuests(id, list) {
       // Normalise phones to E.164-ish (strip spaces/()/- ) so outbound SMS and
