@@ -37,6 +37,7 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await page.locator("[data-new]").first().click();
     await page.fill("#f-name", "E2E Garden Party");
     await page.fill("#f-loc", "14 Rosewood Lane");
+    await page.fill("#f-date", "2026-08-22T19:00");
     // Phase-1 invite glow-up: font, effect, extras, question
     await page.click('[data-font="playful"]');
     await page.fill("#f-fx", "🎈🎂");
@@ -84,6 +85,11 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await page.fill("#r-answer", "Gluten-free");
     await page.click("#r-submit");
     await expect(page.locator(".invite h2")).toHaveText("You're on the list!");
+    // add-to-calendar appears once confirmed — Google link + downloadable .ics
+    await expect(page.locator(".cal-row a", { hasText: "Google" }))
+      .toHaveAttribute("href", /calendar\.google\.com.*20260822T190000%2F20260822T220000/);
+    await expect(page.locator(".cal-row a", { hasText: "Apple / Outlook" }))
+      .toHaveAttribute("download", /\.ics$/);
   });
 
   await test.step("host dashboard reflects the RSVP (incl. the guest's answer)", async () => {

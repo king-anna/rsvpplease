@@ -1232,6 +1232,10 @@ body.rsvp-dark .choice--orb.no.sel{box-shadow:0 0 0 4px rgba(194,93,110,.35),0 1
 a.inv-extra:hover{border-color:var(--rose);color:var(--rose);}
 body.rsvp-dark .inv-extra{background:rgba(255,255,255,.07);}
 
+/* Add-to-calendar row (post-confirm). */
+.cal-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:14px 0 2px;}
+.cal-row__label{font-size:.86rem;font-weight:600;color:var(--ink-soft);}
+
 /* Social proof strip (opt-in, shown after this guest replied). */
 .inv-going{display:flex;align-items:center;gap:10px;margin:14px 0 0;padding:11px 14px;border-radius:var(--r);
   background:var(--ok-bg);color:var(--ok);font-weight:600;font-size:.92rem;}

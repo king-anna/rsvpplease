@@ -38,7 +38,7 @@
     const D = window.InviteDesign;
     document.body.classList.add("rsvp-themed");
     document.body.classList.toggle("rsvp-dark", !!D.themeOf(event).dark);
-    document.body.setAttribute("style", D.pageBackground(event));
+    document.body.setAttribute("style", D.pageSolid(event));
     document.querySelector(".inv-pagefx")?.remove();
     document.body.insertAdjacentHTML("afterbegin", D.pageLayer(event));
   }
@@ -60,6 +60,46 @@
       chip("🅿️", "Parking", x.parking),
     ].join("");
     return chips ? `<div class="inv-extras">${chips}</div>` : "";
+  }
+
+  // "Add to calendar" — a Google Calendar link + a downloadable .ics for
+  // Apple/Outlook. Shown once the guest has confirmed (so it carries the
+  // revealed address). Times are floating local (host's clock); 3h default.
+  function calendarButtons(event) {
+    if (!event.date) return "";
+    const start = new Date(event.date);
+    if (isNaN(start)) return "";
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000);
+    const pad = (n) => String(n).padStart(2, "0");
+    const local = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+    const icsText = (s) => (s || "").replace(/\\/g, "\\\\").replace(/[,;]/g, (m) => "\\" + m).replace(/\n/g, "\\n");
+
+    const g = new URL("https://calendar.google.com/calendar/render");
+    g.searchParams.set("action", "TEMPLATE");
+    g.searchParams.set("text", event.name || "Party");
+    g.searchParams.set("dates", `${local(start)}/${local(end)}`);
+    if (event.location) g.searchParams.set("location", event.location);
+    g.searchParams.set("details", "RSVP: " + location.href);
+
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//RSVPplease//EN", "BEGIN:VEVENT",
+      `UID:${token}@rsvpplease.app`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+      `DTSTART:${local(start)}`,
+      `DTEND:${local(end)}`,
+      `SUMMARY:${icsText(event.name || "Party")}`,
+      event.location ? `LOCATION:${icsText(event.location)}` : "",
+      `DESCRIPTION:${icsText("RSVP: " + location.href)}`,
+      "END:VEVENT", "END:VCALENDAR",
+    ].filter(Boolean).join("\r\n");
+    const icsName = ((event.name || "party").replace(/[^\w -]/g, "").trim() || "party") + ".ics";
+
+    return `
+      <div class="cal-row">
+        <span class="cal-row__label">📅 Add to calendar</span>
+        <a class="inv-extra" href="${esc(g.toString())}" target="_blank" rel="noopener">Google</a>
+        <a class="inv-extra" href="data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}" download="${esc(icsName)}">Apple / Outlook</a>
+      </div>`;
   }
 
   // Opt-in social proof — the API only returns counts once THIS guest replied.
@@ -116,6 +156,7 @@
               <input class="input" id="r-answer" placeholder="Your answer" value="${esc(guest.answer || "")}"></div>` : ""}
           </div>
           ${goingStrip(event)}
+          ${guest.status === "confirmed" ? calendarButtons(event) : ""}
 
           <button class="btn primary block lg" id="r-submit" disabled>Send my RSVP</button>
           <p class="help text-c mt-16">Powered by RSVP<b>please</b> · or just reply to the text</p>
@@ -167,6 +208,7 @@
             ${detail("calendar", fmt(event.date))}
             ${detail("location", event.location)}
           </div>` : ""}
+          ${yes ? calendarButtons(event) : ""}
           ${goingStrip(event)}
           ${autoReply ? `
             <div class="phone" style="width:100%;background:transparent;box-shadow:none;border:none;padding:0">

@@ -260,9 +260,18 @@
         ? `background:linear-gradient(160deg, ${c2} 0%, #15223F 55%, #0E1830 100%)`
         : `background:linear-gradient(160deg, ${c1} 0%, ${c2} 100%)`;
     },
+    // Solid fallback painted on <body> behind the fixed gradient layer (keeps
+    // overscroll/edges the right colour).
+    pageSolid(event) {
+      const th = this.themeOf(event);
+      const [, c2] = this.PALETTES[event.palette] || this.PALETTES[th.palette];
+      return `background:${th.dark ? "#0E1830" : c2}`;
+    },
     // Fixed effect layer that floats the motif/emoji across the whole viewport.
+    // It carries the gradient itself (a fixed div beats background-attachment:
+    // fixed, which scrolls away on iOS and leaves a bare band when scrolling).
     pageLayer(event) {
-      return `<div class="inv-pagefx" aria-hidden="true">${this.motifHTML(event)}</div>`;
+      return `<div class="inv-pagefx" style="${this.pageBackground(event)}" aria-hidden="true">${this.motifHTML(event)}</div>`;
     },
     // The invitation banner. `tag` lets callers avoid a second h1 on dashboard pages.
     banner(event, tag = "h1") {
