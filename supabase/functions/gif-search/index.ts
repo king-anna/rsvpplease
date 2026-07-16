@@ -13,7 +13,10 @@ Deno.serve(async (req) => {
   const pf = preflight(req);
   if (pf) return pf;
   try {
-    const key = env("GIF", false);
+    // The GIPHY key — accept the common secret spellings so a rename in the
+    // dashboard never silently kills search (user's original name: GIF).
+    const key = env("GIF", false) || env("GIFS", false) || env("GIPHY", false) ||
+      env("GIPHY_API_KEY", false) || env("GIF_API_KEY", false);
     if (!key) return json({ error: "gif search not configured" }, 503);
 
     let q = "", limit = 12;
