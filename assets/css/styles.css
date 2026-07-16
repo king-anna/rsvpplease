@@ -1256,6 +1256,51 @@ body.rsvp-dark .inv-extra{background:rgba(255,255,255,.07);}
 body.rsvp-dark .inv-going{background:rgba(63,157,107,.18);color:#8FE0B4;}
 .inv-going .names{color:inherit;opacity:.85;font-weight:500;}
 
+/* ===== Desktop invite: full-page spread, not a floating card =========== */
+/* ≥960px the ticket splits into a big sticky poster (the banner — photo or
+   gradient + motif) and a frosted interaction panel. Mobile keeps the card.
+   :has(.inv-banner) leaves bannerless states (invite-not-found) alone. */
+@media (min-width: 960px) {
+  body.rsvp-themed .rsvp-stage{padding:48px 40px;align-items:start;}
+  body.rsvp-themed .rsvp-stage > #rsvp{width:min(1120px,100%);}
+  body.rsvp-themed .invite.ticket:has(.inv-banner){
+    display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:start;
+    width:100%;background:transparent!important;border:none!important;box-shadow:none!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible;
+  }
+  /* the ticket's perforated top edge belongs to the card look, not the spread */
+  body.rsvp-themed .invite.ticket:has(.inv-banner)::before{display:none;}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner{
+    position:sticky;top:48px;min-height:min(560px,72vh);border-radius:28px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    box-shadow:var(--shadow-lg);padding:56px 36px;
+  }
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-title{font-size:clamp(2.6rem,3.6vw,3.6rem);}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-kicker{font-size:2.1rem;}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-hostline{font-size:.95rem;}
+  /* poster is taller than the 320px the banner motifs were tuned for —
+     use the viewport-scale keyframes so particles travel the full height */
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-confetti span,
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-emojifx span{animation-name:inv-fall-page;}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-petals span,
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-leaves span{animation-name:inv-fall-sway-page;}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-bubbles span{animation-name:inv-rise-page;}
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-banner .inv-hearts span{animation-name:inv-heart-rise-page;}
+  /* the interactive half becomes its own frosted panel */
+  body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-body{
+    background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.55);border-radius:24px;
+    padding:28px 30px 32px;box-shadow:var(--shadow-lg);
+    -webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);
+  }
+  body.rsvp-dark .invite.ticket:has(.inv-banner) .inv-body{
+    background:rgba(20,29,52,.82);border-color:rgba(255,255,255,.14);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    body.rsvp-themed .invite.ticket:has(.inv-banner) .inv-body{background:rgba(255,255,255,.97);}
+    body.rsvp-dark .invite.ticket:has(.inv-banner) .inv-body{background:rgba(20,29,52,.97);}
+  }
+}
+
 /* Party wall (activity) — same gate as the going strip. */
 .inv-activity{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);
   background:var(--surface-soft);border:1px solid var(--line);text-align:left;}
