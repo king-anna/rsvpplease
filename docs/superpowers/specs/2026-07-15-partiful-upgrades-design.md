@@ -143,6 +143,11 @@ Host-side: the guest table/conversation drawer shows the guest's `answer` when p
   Supabase Edge Function secret named **`GIF`** (not GIPHY_API_KEY) — the gif-search
   proxy function must read `env("GIF")`. Proxied server-side so the key never ships
   to the browser. Fallback: "paste a GIF URL" with no third-party dependency.
+  **MANDATORY (GIPHY ToS §5A):** conspicuously display the official "Powered By
+  GIPHY" logo mark inside the GIF picker adjacent to results (use GIPHY's official
+  attribution assets, no home-made label; never put GIPHY branding in our own
+  name/logo). New keys are beta (rate-limited); the production-key upgrade review
+  requires a screenshot of the app showing these attribution marks.
 - **Photo album:** guests upload snaps to a public-read Storage bucket via signed
   upload URLs issued per token; host can delete; album section on the invite page.
 
