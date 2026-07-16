@@ -263,6 +263,10 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .textarea { resize: vertical; min-height: 110px; line-height: 1.55; }
 .help { font-size: .78rem; color: var(--ink-faint); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* 1fr tracks have an `auto` minimum — an input's intrinsic width can force the
+   row wider than its card (the invite card visibly shifted when the hidden
+   name/phone row appeared). Let the tracks actually shrink. */
+.field-row > .field, .field-row .input { min-width: 0; }
 
 /* ---- Pills / badges --------------------------------------------------- */
 .pill {
@@ -1170,6 +1174,11 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .inv-pagefx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
 .inv-pagefx .inv-motif{position:absolute;inset:0;}
 .rsvp-stage{position:relative;z-index:1;}
+/* #rsvp is a centred grid item, so without a set width it sizes to whatever's
+   inside — revealing the RSVP fields made the card grow and visibly jump
+   sideways. Pin it; the card fills it. */
+.rsvp-stage > #rsvp{width:min(460px,100%);}
+.rsvp-stage .invite{width:100%;}
 /* Falling/rising motifs were tuned to the 320px banner — page scale uses vh. */
 .inv-pagefx .inv-confetti span,.inv-pagefx .inv-emojifx span{animation-name:inv-fall-page;}
 .inv-pagefx .inv-petals span,.inv-pagefx .inv-leaves span{animation-name:inv-fall-sway-page;}
@@ -1187,6 +1196,11 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 /* The themed page paints its own gradient — the default pink radial blobs and
    grain (body::before/::after, fixed layers) would sit on top of it. */
 body.rsvp-themed::before,body.rsvp-themed::after{display:none;}
+/* Never scroll the invite sideways, and reserve the scrollbar gutter so the
+   centred card doesn't nudge when revealing the RSVP fields makes the page
+   tall enough to scroll. */
+html{scrollbar-gutter:stable;}
+body.rsvp-themed{overflow-x:hidden;}
 
 /* Frosted-glass invite card over the painted page. */
 body.rsvp-themed .invite.ticket{background:rgba(255,255,255,.9);
