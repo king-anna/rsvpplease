@@ -1309,6 +1309,8 @@
     const ev = await window.Api.getEvent(id);
     if (!ev) { go("#/events"); return; }
     const guests = await window.Api.listGuests(id);
+    let photos = [];
+    try { photos = await window.Api.hostPhotos(id); } catch (e) { /* album card just hides */ }
     const c = ev.counts;
     const uninvited = guests.filter((g) => !g.invitedAt && !g.selfRegistered).length;
     // Billable = host-added guests; open-link joiners are never texted/billed.
@@ -1428,7 +1430,18 @@
               <button class="btn primary" id="ev-add2">${icon("plus")} Add your first guest</button>
             </div>`}
         </div>
-      </div>`);
+      </div>
+
+      ${photos.length ? `
+      <div class="card mt-24 reveal">
+        <div class="card-head"><div><h3>📸 Party album</h3><p class="muted" style="font-size:.86rem">${photos.length} photo${photos.length === 1 ? "" : "s"} from your guests — tap ✕ to remove any.</p></div></div>
+        <div class="host-album">
+          ${photos.map((p) => `
+            <a class="ph" href="${esc(p.url)}" target="_blank" rel="noopener" style="background-image:url('${esc(p.url)}')">
+              <button data-ph-del="${esc(p.id)}" aria-label="Delete photo" title="Delete photo">✕</button>
+            </a>`).join("")}
+        </div>
+      </div>` : ""}`);
 
     app.querySelector("[data-back]").addEventListener("click", () => go("#/events"));
     app.querySelector("[data-edit]").addEventListener("click", () => go("#/event/" + id + "/edit"));
@@ -1461,6 +1474,12 @@
       });
       row.querySelector("[data-copy]")?.addEventListener("click", () => copy(window.Api.rsvpLink(row.dataset.token)));
     });
+    app.querySelectorAll("[data-ph-del]").forEach((b) => b.addEventListener("click", async (e) => {
+      e.preventDefault(); e.stopPropagation(); // it sits inside the photo link
+      b.disabled = true;
+      try { await window.Api.deletePhoto(b.dataset.phDel); toast("Photo removed", "ok"); render(); }
+      catch (err) { toast(err.message || "Couldn't delete", "err"); b.disabled = false; }
+    }));
   }
 
   function channelChip(ch) {
@@ -1712,6 +1731,7 @@
           </div>
           <div class="mt-8">${statusPill(g.status)}</div>
           ${g.answer ? `<p class="tel mt-8" title="Their answer to your question">💬 “${esc(g.answer)}”</p>` : ""}
+          ${g.gifUrl ? `<img class="drawer-gif" src="${esc(g.gifUrl)}" alt="Their GIF">` : ""}
         </div>
         <div class="drawer-body">${thread}</div>
         <div class="drawer-foot">

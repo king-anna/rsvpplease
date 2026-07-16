@@ -211,6 +211,10 @@
       const respondedGuests = Object.values(db.guests)
         .filter((g) => g.eventId === ev.id && (g.status === "confirmed" || g.status === "declined") && g.respondedAt)
         .sort((a, b) => b.respondedAt - a.respondedAt);
+      const albumPhotos = Object.values(db.photos || {})
+        .filter((p) => p.eventId === ev.id)
+        .sort((a, b) => b.createdAt - a.createdAt).slice(0, 24)
+        .map((p) => ({ id: p.id, url: p.url }));
       return { guest, event: Object.assign({}, ev, {
         location: locationHidden ? "" : ev.location,
         locationHidden,
@@ -218,8 +222,9 @@
         goingNames: showSocial ? confirmed.slice(0, 8).map((g) => ((g.name || "").trim() || "A guest").split(/\s+/)[0]) : [],
         activity: showSocial ? respondedGuests.slice(0, 8).map((g) => ({
           name: ((g.name || "").trim() || "A guest").split(/\s+/)[0],
-          status: g.status, note: (g.note || "").trim(), at: g.respondedAt,
+          status: g.status, note: (g.note || "").trim(), gif: g.gifUrl || "", at: g.respondedAt,
         })) : [],
+        photos: responded ? albumPhotos : null,
       }) };
     },
     // Open invite (/join/<open_token>): the party view for someone not yet on
@@ -239,7 +244,7 @@
     // Self-serve RSVP with the same guards as the backend: honeypot pretends
     // success, phone must be 7–15 digits, 300-signup cap, dedupe by last-10
     // digits (repeat submits update the same guest).
-    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp }) {
+    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp, gif }) {
       if ((hp || "").trim()) return { ok: true, token: null, autoReply: "" };
       const db = window.Store.load();
       const ev = Object.values(db.events).find((e) => e.openToken === openToken && !e.archived);
@@ -260,6 +265,7 @@
         if (status === "confirmed" && partySize) g.partySize = Math.max(1, Math.min(20, Number(partySize) || 1));
         if ((note || "").trim()) g.note = note.trim();
         if ((answer || "").trim()) g.answer = answer.trim();
+        if (gif && /^https:\/\//.test(gif)) g.gifUrl = gif;
       } else {
         const id = window.Store.uid("g");
         g = {
@@ -268,6 +274,7 @@
           partySize: status === "confirmed" ? Math.max(1, Math.min(20, Number(partySize) || 1)) : 1,
           status, token: window.Store.uid("t") + window.Store.uid(""),
           note: (note || "").trim(), answer: (answer || "").trim(),
+          gifUrl: (gif && /^https:\/\//.test(gif)) ? gif : "",
           selfRegistered: true, invitedAt: null, respondedAt: now,
           nudgeCount: 0, lastNudgeAt: null, createdAt: now,
         };
@@ -438,7 +445,36 @@
     },
 
     /* RSVP response (from public page, or simulating an inbound SMS) */
-    async recordRsvp(token, { status, partySize, note, answer, viaSms }) {
+    /* Media (Phase 3) — local parity. GIF search returns [] so the picker
+       exercises its paste-a-URL fallback; photos live as small data-URLs. */
+    async gifSearch() { return []; },
+    async uploadPartyPhoto(token, dataUrl) {
+      const db = window.Store.load();
+      db.photos = db.photos || {};
+      const g = Object.values(db.guests).find((x) => x.token === token);
+      if (!g) throw new Error("Invite not found");
+      if (g.status !== "confirmed" && g.status !== "declined") throw new Error("RSVP first, then add photos");
+      const mine = Object.values(db.photos).filter((p) => p.guestId === g.id);
+      if (mine.length >= 6) throw new Error("you've reached 6 photos in local preview");
+      const id = window.Store.uid("p");
+      db.photos[id] = { id, eventId: g.eventId, guestId: g.id, url: dataUrl, createdAt: Date.now() };
+      window.Store.save(db);
+      return { id, url: dataUrl };
+    },
+    async hostPhotos(eventId) {
+      const db = window.Store.load();
+      return Object.values(db.photos || {})
+        .filter((p) => p.eventId === eventId)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    },
+    async deletePhoto(id) {
+      const db = window.Store.load();
+      if (db.photos) delete db.photos[id];
+      window.Store.save(db);
+      return { ok: true };
+    },
+
+    async recordRsvp(token, { status, partySize, note, answer, gif, viaSms }) {
       const db = window.Store.load();
       const g = Object.values(db.guests).find((x) => x.token === token);
       if (!g) throw new Error("Invite not found");
@@ -460,6 +496,7 @@
       if (status === "confirmed" && partySize) g.partySize = Number(partySize) || g.partySize;
       if (note) g.note = note;
       if (answer) g.answer = answer;
+      if (gif && /^https:\/\//.test(gif)) g.gifUrl = gif;
 
       // Auto-reply with the host's customised yes/no template.
       const tplKey = status === "confirmed" ? "replyYes" : "replyNo";

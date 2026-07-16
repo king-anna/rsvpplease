@@ -121,7 +121,8 @@
       ${acts.map((a) => `
         <div class="inv-act">
           <span class="inv-act__ic">${a.status === "confirmed" ? "🎉" : "😢"}</span>
-          <span class="inv-act__txt"><b>${esc(a.name)}</b> ${a.status === "confirmed" ? "is going" : "can't make it"}${a.note ? ` — <i>“${esc(a.note)}”</i>` : ""}</span>
+          <span class="inv-act__txt"><b>${esc(a.name)}</b> ${a.status === "confirmed" ? "is going" : "can't make it"}${a.note ? ` — <i>“${esc(a.note)}”</i>` : ""}
+            ${a.gif ? `<img class="inv-act__gif" loading="lazy" src="${esc(a.gif)}" alt="">` : ""}</span>
           <span class="inv-act__when">${a.at ? esc(relTime(a.at)) : ""}</span>
         </div>`).join("")}
     </div>`;
@@ -132,6 +133,132 @@
   const noteLabel = (event) => event.showGuests
     ? `Leave a comment 🎉 <span class="faint">(other guests can see it)</span>`
     : `Note to host <span class="faint">(optional)</span>`;
+
+  /* ---- GIF on the comment (GIPHY, proxied server-side) ------------------ */
+  // The "Powered By GIPHY" mark in the picker is required by GIPHY's API
+  // terms (§5A) — official asset, themed for light/dark cards.
+  function gifAttachHTML(event) {
+    const mark = window.InviteDesign.themeOf(event).dark ? "/assets/img/giphy-dark.png" : "/assets/img/giphy-light.png";
+    return `
+      <div class="gif-attach mb-16">
+        <div class="row gap-8" style="align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn sm soft" id="gif-btn">🎬 Add a GIF</button>
+          <span id="gif-preview"></span>
+        </div>
+        <div id="gif-panel" class="gif-panel hide">
+          <div class="row gap-8" style="align-items:center">
+            <input class="input" id="gif-q" placeholder="Search GIFs…" style="flex:1;min-width:0">
+            <img class="gif-mark" src="${mark}" alt="Powered by GIPHY">
+          </div>
+          <div class="gif-grid" id="gif-grid"></div>
+          <div class="hide" id="gif-fallback">
+            <p class="help" style="margin:8px 0 6px">Search is unavailable — paste a GIF link instead:</p>
+            <input class="input" id="gif-url" type="url" placeholder="https://…gif">
+          </div>
+        </div>
+      </div>`;
+  }
+  // Wires the picker; returns () => the chosen GIF url (or "").
+  function wireGifAttach() {
+    const btn = document.getElementById("gif-btn");
+    if (!btn) return () => "";
+    const panel = document.getElementById("gif-panel");
+    const grid = document.getElementById("gif-grid");
+    const q = document.getElementById("gif-q");
+    const fallback = document.getElementById("gif-fallback");
+    const preview = document.getElementById("gif-preview");
+    let chosen = "";
+
+    const setChosen = (url) => {
+      chosen = url || "";
+      preview.innerHTML = chosen
+        ? `<span class="gif-chosen"><img src="${esc(chosen)}" alt=""><button type="button" id="gif-rm" aria-label="Remove GIF">✕</button></span>`
+        : "";
+      document.getElementById("gif-rm")?.addEventListener("click", () => setChosen(""));
+      if (chosen) panel.classList.add("hide");
+    };
+
+    let timer = null, seq = 0;
+    const search = async () => {
+      const my = ++seq;
+      grid.innerHTML = `<span class="help">Loading…</span>`;
+      let gifs = [];
+      try { gifs = await window.Api.gifSearch(q.value.trim()); } catch (e) { /* fall back */ }
+      if (my !== seq) return; // a newer search finished first
+      if (!gifs.length) { grid.innerHTML = ""; fallback.classList.remove("hide"); return; }
+      fallback.classList.add("hide");
+      grid.innerHTML = gifs.map((g) =>
+        `<button type="button" class="gif-cell" data-gif="${esc(g.url)}" style="background-image:url('${esc(g.preview)}')" aria-label="Choose GIF"></button>`).join("");
+      grid.querySelectorAll("[data-gif]").forEach((b) =>
+        b.addEventListener("click", () => setChosen(b.dataset.gif)));
+    };
+
+    btn.addEventListener("click", () => {
+      panel.classList.toggle("hide");
+      if (!panel.classList.contains("hide") && !grid.childElementCount) search();
+    });
+    q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(search, 350); });
+    document.getElementById("gif-url").addEventListener("change", (e) => {
+      const v = (e.target.value || "").trim();
+      if (/^https:\/\/\S+\.(gif|webp)(\?\S*)?$/i.test(v) || /^https:\/\/media\d*\.giphy\.com\//.test(v)) setChosen(v);
+      else if (v) toast("That doesn't look like a GIF link", "err");
+    });
+    return () => chosen;
+  }
+
+  /* ---- Photo album (responded guests only — event.photos present) ------- */
+  function albumSection(event) {
+    if (!Array.isArray(event.photos)) return "";
+    const cells = event.photos.map((p) =>
+      `<a class="alb-cell" href="${esc(p.url)}" target="_blank" rel="noopener" style="background-image:url('${esc(p.url)}')" aria-label="Party photo"></a>`).join("");
+    return `
+      <div class="inv-album">
+        <div class="inv-activity__t">📸 Party album</div>
+        ${event.photos.length ? `<div class="alb-grid">${cells}</div>` : `<p class="help" style="margin:2px 0 8px">No photos yet — add the first!</p>`}
+        <button type="button" class="btn sm soft" id="alb-add">Add photos</button>
+        <input type="file" id="alb-file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+      </div>`;
+  }
+  // Client-side shrink so uploads are quick and under the server cap.
+  function shrinkImage(file, maxPx, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const sc = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * sc));
+        c.height = Math.max(1, Math.round(img.height * sc));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        resolve(c.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error("Couldn't read that image")); };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  function wireAlbum(rerender) {
+    const add = document.getElementById("alb-add");
+    if (!add) return;
+    const input = document.getElementById("alb-file");
+    add.addEventListener("click", () => input.click());
+    input.addEventListener("change", async () => {
+      const files = [...(input.files || [])].slice(0, 6);
+      if (!files.length) return;
+      add.disabled = true; add.textContent = "Uploading…";
+      // Local preview stores data-URLs in localStorage → keep them tiny there.
+      const live = window.Api.isBackendLive();
+      let ok = 0;
+      for (const f of files) {
+        try {
+          const dataUrl = await shrinkImage(f, live ? 1600 : 700, live ? 0.85 : 0.7);
+          await window.Api.uploadPartyPhoto(token, dataUrl);
+          ok++;
+        } catch (e) { toast(e.message || "Upload failed", "err"); }
+      }
+      if (ok) toast(`Added ${ok} photo${ok === 1 ? "" : "s"} 📸`, "ok");
+      rerender();
+    });
+  }
 
   function renderInvite(guest, event) {
     let choice = null;
@@ -178,9 +305,11 @@
             ${event.guestQuestion ? `
             <div class="field mb-16"><span class="label">${esc(event.guestQuestion)}</span>
               <input class="input" id="r-answer" placeholder="Your answer" value="${esc(guest.answer || "")}"></div>` : ""}
+            ${gifAttachHTML(event)}
           </div>
           ${goingStrip(event)}
           ${activityStrip(event)}
+          ${albumSection(event)}
           ${guest.status === "confirmed" ? calendarButtons(event) : ""}
 
           <button class="btn primary block lg" id="r-submit" disabled>Send my RSVP</button>
@@ -190,6 +319,8 @@
 
     const extra = document.getElementById("extra");
     const submit = document.getElementById("r-submit");
+    const getGif = wireGifAttach();
+    wireAlbum(init);
     root.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => {
       choice = b.dataset.c;
       root.querySelectorAll("[data-c]").forEach((c) => c.classList.remove("sel"));
@@ -207,11 +338,12 @@
         partySize: document.getElementById("r-party")?.value,
         note: document.getElementById("r-note")?.value,
         answer: document.getElementById("r-answer")?.value,
+        gif: getGif(),
       });
-      // Re-fetch: confirming may unlock the hidden address and the going list.
+      // Re-fetch: confirming may unlock the hidden address, going list & album.
       let fresh = null;
       try { fresh = await window.Api.getGuestByToken(token); } catch (e) { /* keep what we have */ }
-      renderDone(choice, (fresh && fresh.event) || event, guest, res.autoReply);
+      renderDone(choice, (fresh && fresh.event) || event, (fresh && fresh.guest) || guest, res.autoReply);
     });
   }
 
@@ -274,6 +406,7 @@
               ${event.guestQuestion ? `
               <div class="field mb-16"><span class="label">${esc(event.guestQuestion)}</span>
                 <input class="input" id="r-answer" placeholder="Your answer"></div>` : ""}
+              ${gifAttachHTML(event)}
             </div>
           </div>
 
@@ -285,6 +418,7 @@
     const extra = document.getElementById("extra");
     const extraYes = document.getElementById("extra-yes");
     const submit = document.getElementById("r-submit");
+    const getGif = wireGifAttach();
 
     // Clean the phone as they type — spaces/brackets stripped, leading + forced.
     const phoneEl = document.getElementById("r-phone");
@@ -322,6 +456,7 @@
           note: document.getElementById("r-note")?.value,
           answer: document.getElementById("r-answer")?.value,
           hp: document.getElementById("r-website")?.value,
+          gif: getGif(),
         });
         if (res.token) {
           // Continue as this guest: their personal link becomes the URL, so a
@@ -361,9 +496,11 @@
             ${detail("calendar", fmt(event.date))}
             ${detail("location", event.location)}
           </div>` : ""}
+          ${guest && guest.gifUrl ? `<img class="inv-done__gif" src="${esc(guest.gifUrl)}" alt="">` : ""}
           ${yes ? calendarButtons(event) : ""}
           ${goingStrip(event)}
           ${activityStrip(event)}
+          ${albumSection(event)}
           ${autoReply ? `
             <div class="phone" style="width:100%;background:transparent;box-shadow:none;border:none;padding:0">
               <div class="bubble" style="margin:0 auto">${esc(autoReply)}<div class="meta">From ${esc(event.name)}</div></div>
@@ -372,6 +509,12 @@
         </div>
       </div>`;
     toast(yes ? "RSVP confirmed" : "Reply sent", "ok");
+    // "Add photos" on the done view → refresh the album in place.
+    wireAlbum(async () => {
+      let f = null;
+      try { f = await window.Api.getGuestByToken(token); } catch (e) { /* keep view */ }
+      if (f) renderDone(choice, f.event, f.guest, "");
+    });
   }
 
   async function init() {

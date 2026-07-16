@@ -83,13 +83,26 @@ test("existing account: full host journey (create → share → RSVP → SMS →
     await expect(page.locator(".inv-extra")).toContainText("Garden chic");
     await page.click(".choice--orb.yes");
     await page.fill("#r-answer", "Gluten-free");
+    // GIF picker: local search returns nothing → paste fallback (with the
+    // mandatory Powered-By-GIPHY mark visible in the panel)
+    await page.click("#gif-btn");
+    await expect(page.locator(".gif-mark")).toBeVisible();
+    await expect(page.locator("#gif-fallback")).toBeVisible();
+    await page.fill("#gif-url", "https://media1.giphy.com/media/e2e/giphy.gif");
+    await page.locator("#gif-url").blur();
+    await expect(page.locator(".gif-chosen img")).toHaveAttribute("src", /giphy\.gif/); // (fake URL never loads → 0-size img reads as "hidden")
     await page.click("#r-submit");
     await expect(page.locator(".invite h2")).toHaveText("You're on the list!");
+    await expect(page.locator(".inv-done__gif")).toHaveAttribute("src", /giphy\.gif/);
     // add-to-calendar appears once confirmed — Google link + downloadable .ics
     await expect(page.locator(".cal-row a", { hasText: "Google" }))
       .toHaveAttribute("href", /calendar\.google\.com.*20260822T190000%2F20260822T220000/);
     await expect(page.locator(".cal-row a", { hasText: "Apple / Outlook" }))
       .toHaveAttribute("download", /\.ics$/);
+    // photo album: upload a tiny JPEG through the real resize→store path
+    const jpeg = Buffer.from("/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AVN//2Q==", "base64");
+    await page.setInputFiles("#alb-file", { name: "party.jpg", mimeType: "image/jpeg", buffer: jpeg });
+    await expect(page.locator(".alb-cell")).toHaveCount(1);
   });
 
   await test.step("host dashboard reflects the RSVP (incl. the guest's answer)", async () => {

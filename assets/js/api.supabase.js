@@ -62,14 +62,15 @@
     goingCount: ev.going_count == null ? null : Number(ev.going_count),
     goingNames: Array.isArray(ev.going_names) ? ev.going_names : [],
     activity: Array.isArray(ev.activity)
-      ? ev.activity.map((a) => ({ name: a.name || "A guest", status: a.status, note: a.note || "", at: ts(a.at) }))
+      ? ev.activity.map((a) => ({ name: a.name || "A guest", status: a.status, note: a.note || "", gif: a.gif || "", at: ts(a.at) }))
       : [],
+    photos: Array.isArray(ev.photos) ? ev.photos.map((p) => ({ id: p.id, url: p.url })) : null,
   });
   const guestFromRow = (g) => ({
     id: g.id, eventId: g.event_id, name: g.name || "", phone: g.phone || "",
     email: g.email || "", channel: g.channel || "sms", partySize: g.party_size || 1,
     status: g.status || "pending", token: g.token, note: g.note || "", answer: g.answer || "",
-    selfRegistered: !!g.self_registered,
+    gifUrl: g.gif_url || "", selfRegistered: !!g.self_registered,
     invitedAt: ts(g.invited_at), respondedAt: ts(g.responded_at),
     nudgeCount: g.nudge_count || 0, lastNudgeAt: ts(g.last_nudge_at), createdAt: ts(g.created_at) || 0,
   });
@@ -210,7 +211,7 @@
       const ev = data.event, g = data.guest;
       return {
         guest: { name: g.name, partySize: g.party_size, status: g.status, respondedAt: ts(g.responded_at),
-          answer: g.answer || "", token },
+          answer: g.answer || "", gifUrl: g.gif_url || "", token },
         event: rpcEvent(ev),
       };
     },
@@ -219,11 +220,11 @@
       if (error || !data || !data.event) return null;
       return { event: rpcEvent(data.event) };
     },
-    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp }) {
+    async openRsvp(openToken, { name, phone, status, partySize, note, answer, hp, gif }) {
       const { data, error } = await sb.rpc("rsvp_open_submit", {
         p_open_token: openToken, p_name: name, p_phone: phone, p_status: status,
         p_party: partySize ? Number(partySize) : null, p_note: note || null,
-        p_answer: answer || null, p_hp: hp || null,
+        p_answer: answer || null, p_hp: hp || null, p_gif: gif || null,
       });
       if (error) throw error;
       if (data && data.token) sb.functions.invoke("notify-host", { body: { token: data.token } }).catch(() => {});
@@ -316,14 +317,39 @@
       if (error) throw error;
       return { ok: true };
     },
-    async recordRsvp(token, { status, partySize, note, answer }) {
+    async recordRsvp(token, { status, partySize, note, answer, gif }) {
       const { data, error } = await sb.rpc("rsvp_submit", {
         p_token: token, p_status: status, p_party: partySize ? Number(partySize) : null, p_note: note || null,
-        p_answer: answer || null,
+        p_answer: answer || null, p_gif: gif || null,
       });
       if (error) throw error;
       sb.functions.invoke("notify-host", { body: { token } }).catch(() => {});
       return { ok: true, autoReply: (data && data.auto_reply) || "" };
+    },
+
+    /* Media (Phase 3) */
+    async gifSearch(q) {
+      const { data, error } = await sb.functions.invoke("gif-search", { body: { q: q || "" } });
+      if (error || !data || !Array.isArray(data.gifs)) return [];
+      return data.gifs;
+    },
+    async uploadPartyPhoto(token, dataUrl) {
+      const { data, error } = await sb.functions.invoke("photo-upload", { body: { token, data: dataUrl } });
+      if (error) throw new Error("Upload failed — try a smaller photo");
+      if (data && data.error) throw new Error(data.error);
+      return { id: data.id, url: data.url };
+    },
+    async hostPhotos(eventId) {
+      const { data, error } = await sb.from("photos").select("*")
+        .eq("event_id", eventId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((p) => ({ id: p.id, eventId: p.event_id, guestId: p.guest_id, url: p.url, createdAt: ts(p.created_at) }));
+    },
+    async deletePhoto(id) {
+      const { data, error } = await sb.functions.invoke("photo-delete", { body: { id } });
+      if (error) throw error;
+      if (data && data.error) throw new Error(data.error);
+      return { ok: true };
     },
 
     /* Admin */

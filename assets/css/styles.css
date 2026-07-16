@@ -1262,6 +1262,38 @@ body.rsvp-dark .inv-activity{background:rgba(255,255,255,.06);}
 /* Honeypot — visually gone, still in the DOM for bots to fill. */
 .hp-field{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0;pointer-events:none;}
 
+/* ===== GIF picker (GIPHY, attribution required) ===== */
+.gif-panel{margin-top:10px;padding:12px;border-radius:var(--r);background:var(--surface-soft);border:1px solid var(--line);}
+body.rsvp-dark .gif-panel{background:rgba(255,255,255,.06);}
+.gif-mark{height:16px;flex:none;}
+.gif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.gif-cell{aspect-ratio:4/3;border:2px solid transparent;border-radius:10px;cursor:pointer;
+  background-color:var(--pink-100);background-size:cover;background-position:center;padding:0;}
+.gif-cell:hover{border-color:var(--rose);transform:scale(1.02);}
+.gif-chosen{display:inline-flex;align-items:center;gap:6px;}
+.gif-chosen img{height:52px;border-radius:9px;}
+.gif-chosen button{border:none;background:var(--pink-200);color:var(--rose-deep);width:22px;height:22px;
+  border-radius:50%;cursor:pointer;font-size:.72rem;line-height:1;}
+.inv-act__gif{display:block;max-height:110px;border-radius:10px;margin-top:6px;}
+.inv-done__gif{display:block;max-height:150px;border-radius:12px;margin:0 auto 14px;}
+
+/* ===== Party photo album ===== */
+.inv-album{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);
+  background:var(--surface-soft);border:1px solid var(--line);text-align:left;}
+body.rsvp-dark .inv-album{background:rgba(255,255,255,.06);}
+.alb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:2px 0 10px;}
+.alb-cell{aspect-ratio:1;border-radius:10px;background-color:var(--pink-100);background-size:cover;background-position:center;display:block;}
+.alb-cell:hover{opacity:.9;}
+@media (max-width:480px){.alb-grid{grid-template-columns:repeat(3,1fr);}}
+
+/* host-side album card */
+.host-album{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;}
+.host-album .ph{position:relative;aspect-ratio:1;border-radius:10px;background-size:cover;background-position:center;background-color:var(--pink-100);}
+.host-album .ph button{position:absolute;top:6px;right:6px;width:24px;height:24px;border:none;border-radius:50%;
+  background:rgba(21,34,63,.72);color:#fff;cursor:pointer;font-size:.72rem;line-height:1;}
+.host-album .ph button:hover{background:var(--rose-deep);}
+.drawer-gif{max-height:90px;border-radius:10px;margin-top:8px;display:block;}
+
 @media (prefers-reduced-motion:reduce){.inv-motif,.inv-motif *,.inv-pagefx *{animation:none!important;}.inv-shine::before{display:none;}.inv-hearts span,.inv-fairytale span,.inv-emojifx span{opacity:.85;}}
 
 /* ===== Blog (marketing · webhook-fed posts) ===== */
