@@ -118,9 +118,11 @@
     });
   }
 
-  function copy(text) {
+  // One toast per copy — callers pass their own message instead of stacking a
+  // second toast on top of the default.
+  function copy(text, msg = "Copied to clipboard") {
     navigator.clipboard?.writeText(text).then(
-      () => toast("Copied to clipboard", "ok"),
+      () => toast(msg, "ok"),
       () => toast("Couldn't copy", "err")
     );
   }

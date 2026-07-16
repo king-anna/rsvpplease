@@ -1628,13 +1628,13 @@
       <div class="notice rose${openUrl ? " mt-16" : ""}">${icon("info")}<span>Or send each guest their personal link — text, WhatsApp, email. Replies land on your guest list in real time. No charge.</span></div>
       <div class="share-list mt-16">${rows}</div>` : ""}`);
     body.querySelectorAll("[data-link]").forEach((b) =>
-      b.addEventListener("click", () => { copy(b.getAttribute("data-link")); toast("Link copied", "ok"); }));
+      b.addEventListener("click", () => copy(b.getAttribute("data-link"), "Link copied")));
     modal({
       title: "Share your party",
       body,
       actions: [
         { label: "Close", cls: "ghost", onClick: (c) => c() },
-        ...(guests.length ? [{ label: `Copy all ${guests.length} links`, cls: "primary", onClick: (c) => { copy(allText); toast("All links copied", "ok"); c(); } }] : []),
+        ...(guests.length ? [{ label: `Copy all ${guests.length} links`, cls: "primary", onClick: (c) => { copy(allText, "All links copied"); c(); } }] : []),
       ],
     });
   }
