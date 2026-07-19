@@ -11,6 +11,10 @@ name: Deploy frontend to Cloudflare Pages
 
 on:
   workflow_dispatch:
+  # Daily rebuild so blog posts published via the webhook reach the deployed
+  # sitemap.xml (static XML regenerated at deploy time — no function).
+  schedule:
+    - cron: "20 3 * * *"
   push:
     branches: [main]
     paths:
@@ -20,6 +24,7 @@ on:
       - "sitemap.xml"
       - "robots.txt"
       - "_redirects"
+      - "tools/gen-sitemap.js"
 
 env:
   PROJECT: rsvpplease
@@ -30,6 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Regenerate sitemap.xml (static pages + published blog posts)
+        run: node tools/gen-sitemap.js
 
       - name: Assemble static site
         run: |
