@@ -97,20 +97,43 @@ Publishes an article to `https://rsvpplease.app/blog/<slug>` from an external co
 2. In your SEO tool's webhook settings, set:
    - **Endpoint URL:** `https://ehhitnddiudoxgzoxpys.functions.supabase.co/blog-webhook`
    - **Signing secret / Bearer token:** the same `<secret>`
-3. The tool POSTs JSON; the endpoint verifies `Authorization: Bearer <secret>`, upserts by `slug`
-   (re-posting the same slug edits the post), and returns `{ ok, slug, url }`.
+3. The tool POSTs JSON; the endpoint verifies `Authorization: Bearer <secret>` and returns
+   `{ ok, count, articles: [{ slug, url, action }] }` (plus top-level `slug`/`url` for a
+   single article).
 
-Payload (aliases accepted): `title` (required), `content` (HTML), `meta_description`, `slug`
-(defaults from title), `featured_image_url`, `published_at`, plus optional `author`, `tags`,
-`excerpt`, `published:false` for a draft. Optional `X-Webhook-Signature: sha256=<hmac>` is only
-enforced if you also set `BLOG_WEBHOOK_SIGNING_SECRET`.
+**Payload — v2 batch envelope** (what the tool sends now):
+
+```jsonc
+{ "version": "2", "event": "article.published",
+  "idempotency_key": "9f2c1b7a-…", "delivery_id": "3d81e0c4-…",
+  "sent_at": "2026-07-22T04:07:12.504Z",
+  "articles": [{ "id": "9f2c1b7a-…", "title": "…", "slug": "…",
+                 "content_html": "<h2>…</h2>", "meta_title": "…",
+                 "meta_description": "…", "featured_image_url": "https://…",
+                 "tags": ["a","b"], "published_at": "2026-07-22T04:07:12.504Z" }] }
+```
+
+- **Matching:** `articles[].id` is stored as `posts.external_id` and matched first, so renaming a
+  slug edits that post instead of creating a duplicate; articles without an `id` match on `slug`.
+- **Idempotency:** `X-Idempotency-Key` (or body `idempotency_key`) — a completed delivery is
+  recorded in `webhook_deliveries` and replays return `{ ok, duplicate: true }` without
+  reprocessing. A delivery with *any* failed article is deliberately **not** recorded, so the
+  sender's retry reprocesses it.
+- **Signature** (enforced whenever sent; key = `BLOG_WEBHOOK_SIGNING_SECRET`, else
+  `BLOG_WEBHOOK_SECRET`): `X-Webhook-Signature-V2: sha256=<hmac of "<timestamp>.<body>">` with
+  `X-Webhook-Timestamp` (unix seconds, ±15 min), or v1 `X-Webhook-Signature: sha256=<hmac of body>`.
+  V2 wins when both are present. `BLOG_WEBHOOK_SKIP_SIGNATURE=1` bypasses it while debugging.
+- **Events:** an `event` matching unpublish/delete/archive sets `published = false`.
+- **v1 still works:** a single article at the top level, with the old aliases
+  (`content`/`body_html`, `cover_image_url`/`image`, `date`, `published:false` for a draft).
 
 Test:
 ```bash
 curl -sX POST https://ehhitnddiudoxgzoxpys.functions.supabase.co/blog-webhook \
   -H "Authorization: Bearer $BLOG_WEBHOOK_SECRET" -H "Content-Type: application/json" \
-  -d '{"title":"Hello world","content":"<p>First post.</p>","meta_description":"A test post."}'
-# → {"ok":true,"slug":"hello-world","url":"https://rsvpplease.app/blog/hello-world"}
+  -H "X-Idempotency-Key: $(uuidgen)" \
+  -d '{"version":"2","event":"article.published","articles":[{"title":"Hello world","content_html":"<p>First post.</p>","meta_description":"A test post."}]}'
+# → {"ok":true,"count":1,"articles":[{"slug":"hello-world","url":"https://rsvpplease.app/blog/hello-world","action":"created"}],…}
 ```
 
 ---
